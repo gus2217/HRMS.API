@@ -20,8 +20,9 @@ public sealed class StartConsultationCommandHandler(
         if (consultation.IsFailure) return consultation.Error;
 
         await consultations.AddAsync(consultation.Value, ct);
-        var detail = await consultations.GetDetailAsync(consultation.Value.Id, ct);
-        return detail is null ? Error.NotFound("Consultation not found after creation.") : detail;
+        // Map from the in-memory aggregate — the unit-of-work transaction has not
+        // committed yet, so a re-query would not see the new row.
+        return ConsultationMapper.ToDetail(consultation.Value);
     }
 }
 
@@ -41,8 +42,7 @@ public sealed class RecordTriageCommandHandler(IConsultationRepository consultat
         if (result.IsFailure) return result.Error;
 
         await consultations.UpdateAsync(consultation, ct);
-        var detail = await consultations.GetDetailAsync(consultation.Id, ct);
-        return detail is null ? Error.NotFound("Consultation not found.") : detail;
+        return ConsultationMapper.ToDetail(consultation);
     }
 }
 
@@ -58,8 +58,7 @@ public sealed class RecordDiagnosisCommandHandler(IConsultationRepository consul
         if (result.IsFailure) return result.Error;
 
         await consultations.UpdateAsync(consultation, ct);
-        var detail = await consultations.GetDetailAsync(consultation.Id, ct);
-        return detail is null ? Error.NotFound("Consultation not found.") : detail;
+        return ConsultationMapper.ToDetail(consultation);
     }
 }
 
@@ -78,8 +77,7 @@ public sealed class AddClinicalNoteCommandHandler(
         if (result.IsFailure) return result.Error;
 
         await consultations.UpdateAsync(consultation, ct);
-        var detail = await consultations.GetDetailAsync(consultation.Id, ct);
-        return detail is null ? Error.NotFound("Consultation not found.") : detail;
+        return ConsultationMapper.ToDetail(consultation);
     }
 }
 
@@ -95,8 +93,7 @@ public sealed class AttachLabOrderCommandHandler(IConsultationRepository consult
         if (result.IsFailure) return result.Error;
 
         await consultations.UpdateAsync(consultation, ct);
-        var detail = await consultations.GetDetailAsync(consultation.Id, ct);
-        return detail is null ? Error.NotFound("Consultation not found.") : detail;
+        return ConsultationMapper.ToDetail(consultation);
     }
 }
 
@@ -114,7 +111,6 @@ public sealed class CompleteConsultationCommandHandler(
         if (result.IsFailure) return result.Error;
 
         await consultations.UpdateAsync(consultation, ct);
-        var detail = await consultations.GetDetailAsync(consultation.Id, ct);
-        return detail is null ? Error.NotFound("Consultation not found.") : detail;
+        return ConsultationMapper.ToDetail(consultation);
     }
 }

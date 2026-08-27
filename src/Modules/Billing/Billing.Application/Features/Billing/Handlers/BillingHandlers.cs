@@ -30,8 +30,9 @@ public sealed class IssueInvoiceCommandHandler(
         if (issue.IsFailure) return issue.Error;
 
         await invoices.AddAsync(invoice.Value, ct);
-        var detail = await invoices.GetDetailAsync(invoice.Value.Id, ct);
-        return detail is null ? Error.NotFound("Invoice not found.") : detail;
+        // Map from the in-memory aggregate — the unit-of-work transaction has not
+        // committed yet, so a re-query would not see the new row.
+        return InvoiceMapper.ToDetail(invoice.Value);
     }
 }
 

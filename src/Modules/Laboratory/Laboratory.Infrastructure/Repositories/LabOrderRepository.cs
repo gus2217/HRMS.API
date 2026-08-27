@@ -19,7 +19,7 @@ public sealed class LabOrderRepository(LaboratoryDbContext db) : ILabOrderReposi
 
     public Task UpdateAsync(LabOrder order, CancellationToken ct = default)
     {
-        db.LabOrders.Update(order);
+        db.Entry(order).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 

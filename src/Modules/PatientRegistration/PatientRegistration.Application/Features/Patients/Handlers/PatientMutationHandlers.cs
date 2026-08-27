@@ -43,8 +43,7 @@ public sealed class RegisterAllergyCommandHandler(IPatientRepository patients)
         if (result.IsFailure) return result.Error;
 
         await patients.UpdateAsync(patient, ct);
-        var detail = await patients.GetDetailAsync(patient.Id, ct);
-        return detail is null ? Error.NotFound("Patient not found.") : detail;
+        return PatientMapper.ToDetail(patient);
     }
 }
 
@@ -60,7 +59,6 @@ public sealed class RecordConsentCommandHandler(IPatientRepository patients)
         if (result.IsFailure) return result.Error;
 
         await patients.UpdateAsync(patient, ct);
-        var detail = await patients.GetDetailAsync(patient.Id, ct);
-        return detail is null ? Error.NotFound("Patient not found.") : detail;
+        return PatientMapper.ToDetail(patient);
     }
 }

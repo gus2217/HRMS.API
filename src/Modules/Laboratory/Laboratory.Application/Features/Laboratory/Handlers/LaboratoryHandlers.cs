@@ -27,8 +27,9 @@ public sealed class CreateLabOrderCommandHandler(
         }
 
         await orders.AddAsync(order.Value, ct);
-        var detail = await orders.GetDetailAsync(order.Value.Id, ct);
-        return detail is null ? Error.NotFound("Lab order not found.") : detail;
+        // Map from the in-memory aggregate — the unit-of-work transaction has not
+        // committed yet, so a re-query would not see the new row.
+        return LabOrderMapper.ToDetail(order.Value);
     }
 }
 
@@ -49,8 +50,7 @@ public sealed class RecordLabResultCommandHandler(
         if (result.IsFailure) return result.Error;
 
         await orders.UpdateAsync(order, ct);
-        var detail = await orders.GetDetailAsync(order.Id, ct);
-        return detail is null ? Error.NotFound("Lab order not found.") : detail;
+        return LabOrderMapper.ToDetail(order);
     }
 }
 

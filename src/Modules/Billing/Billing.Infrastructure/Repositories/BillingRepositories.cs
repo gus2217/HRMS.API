@@ -19,7 +19,7 @@ public sealed class InvoiceRepository(BillingDbContext db) : IInvoiceRepository
 
     public Task UpdateAsync(Invoice invoice, CancellationToken ct = default)
     {
-        db.Invoices.Update(invoice);
+        db.Entry(invoice).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 
@@ -53,7 +53,7 @@ public sealed class PaymentRepository(BillingDbContext db) : IPaymentRepository
 
     public Task UpdateAsync(Payment payment, CancellationToken ct = default)
     {
-        db.Payments.Update(payment);
+        db.Entry(payment).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 }
@@ -68,7 +68,7 @@ public sealed class ShaClaimRepository(BillingDbContext db) : IShaClaimRepositor
 
     public Task UpdateAsync(ShaClaim claim, CancellationToken ct = default)
     {
-        db.ShaClaims.Update(claim);
+        db.Entry(claim).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 

@@ -16,7 +16,7 @@ public sealed class NotificationMessageRepository(NotificationsDbContext db)
 
     public Task UpdateAsync(NotificationMessage message, CancellationToken ct = default)
     {
-        db.NotificationMessages.Update(message);
+        db.Entry(message).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 

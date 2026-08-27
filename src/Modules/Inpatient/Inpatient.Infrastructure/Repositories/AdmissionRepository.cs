@@ -19,7 +19,7 @@ public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepos
 
     public Task UpdateAsync(Admission admission, CancellationToken ct = default)
     {
-        db.Admissions.Update(admission);
+        db.Entry(admission).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 

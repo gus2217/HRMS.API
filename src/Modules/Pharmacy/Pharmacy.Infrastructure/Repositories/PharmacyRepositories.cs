@@ -19,7 +19,7 @@ public sealed class PrescriptionRepository(PharmacyDbContext db) : IPrescription
 
     public Task UpdateAsync(Prescription prescription, CancellationToken ct = default)
     {
-        db.Prescriptions.Update(prescription);
+        db.Entry(prescription).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 

@@ -21,8 +21,9 @@ public sealed class AdmitPatientCommandHandler(
         if (admission.IsFailure) return admission.Error;
 
         await admissions.AddAsync(admission.Value, ct);
-        var detail = await admissions.GetDetailAsync(admission.Value.Id, ct);
-        return detail is null ? Error.NotFound("Admission not found.") : detail;
+        // Map from the in-memory aggregate — the unit-of-work transaction has not
+        // committed yet, so a re-query would not see the new row.
+        return AdmissionMapper.ToDetail(admission.Value);
     }
 }
 
@@ -40,8 +41,7 @@ public sealed class DischargePatientCommandHandler(
         if (result.IsFailure) return result.Error;
 
         await admissions.UpdateAsync(admission, ct);
-        var detail = await admissions.GetDetailAsync(admission.Id, ct);
-        return detail is null ? Error.NotFound("Admission not found.") : detail;
+        return AdmissionMapper.ToDetail(admission);
     }
 }
 
@@ -60,8 +60,7 @@ public sealed class AddWardNoteCommandHandler(
         if (result.IsFailure) return result.Error;
 
         await admissions.UpdateAsync(admission, ct);
-        var detail = await admissions.GetDetailAsync(admission.Id, ct);
-        return detail is null ? Error.NotFound("Admission not found.") : detail;
+        return AdmissionMapper.ToDetail(admission);
     }
 }
 

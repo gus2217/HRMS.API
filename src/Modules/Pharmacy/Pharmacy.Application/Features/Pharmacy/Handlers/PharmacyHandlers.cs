@@ -27,8 +27,9 @@ public sealed class CreatePrescriptionCommandHandler(
         }
 
         await prescriptions.AddAsync(prescription.Value, ct);
-        var detail = await prescriptions.GetDetailAsync(prescription.Value.Id, ct);
-        return detail is null ? Error.NotFound("Prescription not found.") : detail;
+        // Map from the in-memory aggregate — the unit-of-work transaction has not
+        // committed yet, so a re-query would not see the new row.
+        return PrescriptionMapper.ToDetail(prescription.Value);
     }
 }
 

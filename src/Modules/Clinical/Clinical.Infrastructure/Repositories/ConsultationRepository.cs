@@ -24,7 +24,7 @@ public sealed class ConsultationRepository(ClinicalDbContext db) : IConsultation
 
     public Task UpdateAsync(Consultation consultation, CancellationToken ct = default)
     {
-        db.Consultations.Update(consultation);
+        db.Entry(consultation).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 

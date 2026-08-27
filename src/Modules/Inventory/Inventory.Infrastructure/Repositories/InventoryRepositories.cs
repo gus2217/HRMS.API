@@ -18,7 +18,7 @@ public sealed class DrugRepository(InventoryDbContext db) : IDrugRepository
 
     public Task UpdateAsync(Drug drug, CancellationToken ct = default)
     {
-        db.Drugs.Update(drug);
+        db.Entry(drug).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 }
@@ -39,7 +39,7 @@ public sealed class StockBatchRepository(InventoryDbContext db) : IStockBatchRep
 
     public Task UpdateAsync(StockBatch batch, CancellationToken ct = default)
     {
-        db.StockBatches.Update(batch);
+        db.Entry(batch).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 }

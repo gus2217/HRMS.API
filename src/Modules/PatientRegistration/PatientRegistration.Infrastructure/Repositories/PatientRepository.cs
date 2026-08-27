@@ -26,7 +26,7 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
 
     public Task UpdateAsync(Patient patient, CancellationToken ct = default)
     {
-        db.Patients.Update(patient);
+        db.Entry(patient).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 

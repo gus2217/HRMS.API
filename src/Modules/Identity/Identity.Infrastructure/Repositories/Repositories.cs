@@ -25,7 +25,7 @@ public sealed class UserRepository(IdentityDbContext db) : IUserRepository
 
     public Task UpdateAsync(User user, CancellationToken ct = default)
     {
-        db.Users.Update(user);
+        db.Entry(user).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 
@@ -88,7 +88,7 @@ public sealed class RefreshTokenRepository(IdentityDbContext db) : IRefreshToken
 
     public Task UpdateAsync(RefreshToken refreshToken, CancellationToken ct = default)
     {
-        db.RefreshTokens.Update(refreshToken);
+        db.Entry(refreshToken).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 }
