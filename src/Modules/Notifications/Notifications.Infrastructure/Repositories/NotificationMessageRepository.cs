@@ -2,6 +2,7 @@ using Jacana.Notifications.Application.Abstractions;
 using Jacana.Notifications.Domain;
 using Jacana.Notifications.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Jacana.SharedKernel.Infrastructure.Persistence;
 
 namespace Jacana.Notifications.Infrastructure.Repositories;
 
@@ -16,7 +17,10 @@ public sealed class NotificationMessageRepository(NotificationsDbContext db)
 
     public Task UpdateAsync(NotificationMessage message, CancellationToken ct = default)
     {
-        db.Entry(message).State = EntityState.Modified;
+        // Aggregate already tracked from GetByIdAsync. New children carry
+        // client-generated keys; EF DetectChanges would classify them as Modified
+        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
+        db.MarkNewChildrenAdded(message);
         return Task.CompletedTask;
     }
 

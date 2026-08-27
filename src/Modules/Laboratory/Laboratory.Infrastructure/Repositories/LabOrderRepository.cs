@@ -3,6 +3,7 @@ using Jacana.Laboratory.Application.DTOs;
 using Jacana.Laboratory.Domain;
 using Jacana.Laboratory.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Jacana.SharedKernel.Infrastructure.Persistence;
 
 namespace Jacana.Laboratory.Infrastructure.Repositories;
 
@@ -19,7 +20,10 @@ public sealed class LabOrderRepository(LaboratoryDbContext db) : ILabOrderReposi
 
     public Task UpdateAsync(LabOrder order, CancellationToken ct = default)
     {
-        db.Entry(order).State = EntityState.Modified;
+        // Aggregate already tracked from GetByIdAsync. New children carry
+        // client-generated keys; EF DetectChanges would classify them as Modified
+        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
+        db.MarkNewChildrenAdded(order);
         return Task.CompletedTask;
     }
 

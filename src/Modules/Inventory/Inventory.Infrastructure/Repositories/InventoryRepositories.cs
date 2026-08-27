@@ -2,6 +2,7 @@ using Jacana.Inventory.Application.Abstractions;
 using Jacana.Inventory.Domain;
 using Jacana.Inventory.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Jacana.SharedKernel.Infrastructure.Persistence;
 
 namespace Jacana.Inventory.Infrastructure.Repositories;
 
@@ -18,7 +19,10 @@ public sealed class DrugRepository(InventoryDbContext db) : IDrugRepository
 
     public Task UpdateAsync(Drug drug, CancellationToken ct = default)
     {
-        db.Entry(drug).State = EntityState.Modified;
+        // Aggregate already tracked from GetByIdAsync. New children carry
+        // client-generated keys; EF DetectChanges would classify them as Modified
+        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
+        db.MarkNewChildrenAdded(drug);
         return Task.CompletedTask;
     }
 }
@@ -39,7 +43,8 @@ public sealed class StockBatchRepository(InventoryDbContext db) : IStockBatchRep
 
     public Task UpdateAsync(StockBatch batch, CancellationToken ct = default)
     {
-        db.Entry(batch).State = EntityState.Modified;
+        // Entity already tracked from GetByIdAsync; mutations auto-detected.
+        // Never force graph state — it marks new children as Modified (UPDATE 0 rows).
         return Task.CompletedTask;
     }
 }

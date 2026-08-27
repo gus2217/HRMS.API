@@ -3,6 +3,7 @@ using Jacana.Pharmacy.Application.DTOs;
 using Jacana.Pharmacy.Domain;
 using Jacana.Pharmacy.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Jacana.SharedKernel.Infrastructure.Persistence;
 
 namespace Jacana.Pharmacy.Infrastructure.Repositories;
 
@@ -19,7 +20,10 @@ public sealed class PrescriptionRepository(PharmacyDbContext db) : IPrescription
 
     public Task UpdateAsync(Prescription prescription, CancellationToken ct = default)
     {
-        db.Entry(prescription).State = EntityState.Modified;
+        // Aggregate already tracked from GetByIdAsync. New children carry
+        // client-generated keys; EF DetectChanges would classify them as Modified
+        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
+        db.MarkNewChildrenAdded(prescription);
         return Task.CompletedTask;
     }
 

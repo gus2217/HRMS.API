@@ -3,6 +3,7 @@ using Jacana.PatientRegistration.Application.DTOs;
 using Jacana.PatientRegistration.Domain;
 using Jacana.PatientRegistration.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Jacana.SharedKernel.Infrastructure.Persistence;
 
 namespace Jacana.PatientRegistration.Infrastructure.Repositories;
 
@@ -26,7 +27,10 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
 
     public Task UpdateAsync(Patient patient, CancellationToken ct = default)
     {
-        db.Entry(patient).State = EntityState.Modified;
+        // Aggregate already tracked from GetByIdAsync. New children carry
+        // client-generated keys; EF DetectChanges would classify them as Modified
+        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
+        db.MarkNewChildrenAdded(patient);
         return Task.CompletedTask;
     }
 

@@ -3,6 +3,7 @@ using Jacana.Inpatient.Application.DTOs;
 using Jacana.Inpatient.Domain;
 using Jacana.Inpatient.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Jacana.SharedKernel.Infrastructure.Persistence;
 
 namespace Jacana.Inpatient.Infrastructure.Repositories;
 
@@ -19,7 +20,10 @@ public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepos
 
     public Task UpdateAsync(Admission admission, CancellationToken ct = default)
     {
-        db.Entry(admission).State = EntityState.Modified;
+        // Aggregate already tracked from GetByIdAsync. New children carry
+        // client-generated keys; EF DetectChanges would classify them as Modified
+        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
+        db.MarkNewChildrenAdded(admission);
         return Task.CompletedTask;
     }
 

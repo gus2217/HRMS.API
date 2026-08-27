@@ -62,9 +62,11 @@ public sealed class ReportingReadRepository(string connectionString) : IReportin
         await using var conn = new NpgsqlConnection(connectionString);
         return (await conn.QueryAsync<ShaClaimStatusReportDto>(new CommandDefinition(
             """
-            SELECT c."Status", COUNT(*) AS "ClaimCount", COALESCE(SUM(i."TotalAmount"), 0) AS "TotalAmount"
+            SELECT c."Status", COUNT(*) AS "ClaimCount",
+                   COALESCE(SUM(l."UnitPrice" * l."Quantity"), 0) AS "TotalAmount"
             FROM billing.sha_claims c
             INNER JOIN billing.invoices i ON i."Id" = c."InvoiceId"
+            INNER JOIN billing.invoice_lines l ON l."InvoiceId" = i."Id"
             GROUP BY c."Status"
             ORDER BY c."Status"
             """,
@@ -96,7 +98,12 @@ public sealed class ReportingReadRepository(string connectionString) : IReportin
             "SELECT COUNT(*) FROM inpatient.admissions WHERE \"Status\" <> 'Discharged' AND \"IsDeleted\" = false");
 
         var totalRevenue = await conn.ExecuteScalarAsync<decimal>(
-            "SELECT COALESCE(SUM(\"TotalAmount\"), 0) FROM billing.invoices WHERE \"Status\" = 'Paid'");
+            """
+            SELECT COALESCE(SUM(l."UnitPrice" * l."Quantity"), 0)
+            FROM billing.invoice_lines l
+            INNER JOIN billing.invoices i ON i."Id" = l."InvoiceId"
+            WHERE i."Status" = 'Paid' AND i."IsDeleted" = false
+            """);
 
         var pendingLabOrders = await conn.ExecuteScalarAsync<int>(
             "SELECT COUNT(*) FROM laboratory.lab_orders WHERE \"Status\" IN ('Pending','InProgress','PartiallyCompleted') AND \"IsDeleted\" = false");

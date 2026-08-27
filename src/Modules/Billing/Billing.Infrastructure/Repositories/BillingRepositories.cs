@@ -3,6 +3,7 @@ using Jacana.Billing.Application.DTOs;
 using Jacana.Billing.Domain;
 using Jacana.Billing.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Jacana.SharedKernel.Infrastructure.Persistence;
 
 namespace Jacana.Billing.Infrastructure.Repositories;
 
@@ -19,7 +20,10 @@ public sealed class InvoiceRepository(BillingDbContext db) : IInvoiceRepository
 
     public Task UpdateAsync(Invoice invoice, CancellationToken ct = default)
     {
-        db.Entry(invoice).State = EntityState.Modified;
+        // Aggregate already tracked from GetByIdAsync. New children carry
+        // client-generated keys; EF DetectChanges would classify them as Modified
+        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
+        db.MarkNewChildrenAdded(invoice);
         return Task.CompletedTask;
     }
 
@@ -53,7 +57,8 @@ public sealed class PaymentRepository(BillingDbContext db) : IPaymentRepository
 
     public Task UpdateAsync(Payment payment, CancellationToken ct = default)
     {
-        db.Entry(payment).State = EntityState.Modified;
+        // Entity already tracked from GetByIdAsync; mutations auto-detected.
+        // Never force graph state — it marks new children as Modified (UPDATE 0 rows).
         return Task.CompletedTask;
     }
 }
@@ -68,7 +73,8 @@ public sealed class ShaClaimRepository(BillingDbContext db) : IShaClaimRepositor
 
     public Task UpdateAsync(ShaClaim claim, CancellationToken ct = default)
     {
-        db.Entry(claim).State = EntityState.Modified;
+        // Entity already tracked from GetByIdAsync; mutations auto-detected.
+        // Never force graph state — it marks new children as Modified (UPDATE 0 rows).
         return Task.CompletedTask;
     }
 

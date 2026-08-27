@@ -29,7 +29,8 @@ public sealed class Invoice : AggregateRoot<Guid>
 
     public IReadOnlyCollection<InvoiceLine> Lines => _lines.AsReadOnly();
 
-    /// <summary>Computed total; persisted as a shadow column ("TotalAmount") for query speed.</summary>
+    /// <summary>Computed total (sum of lines). Not persisted — the reporting layer
+    /// recomputes from invoice_lines in SQL.</summary>
     public Money TotalAmount
     {
         get

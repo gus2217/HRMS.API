@@ -19,6 +19,10 @@ public sealed record RecordTriageCommand(
     decimal? WeightKg)
     : ICommand<Result<ConsultationDetailDto>>;
 
+public sealed record BeginClinicalPhaseCommand(
+    Guid ConsultationId)
+    : ICommand<Result<ConsultationDetailDto>>;
+
 public sealed record RecordDiagnosisCommand(
     Guid ConsultationId,
     string IcdCode,

@@ -3,6 +3,7 @@ using Jacana.Clinical.Application.DTOs;
 using Jacana.Clinical.Domain;
 using Jacana.Clinical.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Jacana.SharedKernel.Infrastructure.Persistence;
 
 namespace Jacana.Clinical.Infrastructure.Repositories;
 
@@ -24,7 +25,10 @@ public sealed class ConsultationRepository(ClinicalDbContext db) : IConsultation
 
     public Task UpdateAsync(Consultation consultation, CancellationToken ct = default)
     {
-        db.Entry(consultation).State = EntityState.Modified;
+        // Aggregate already tracked from GetByIdAsync. New children carry
+        // client-generated keys; EF DetectChanges would classify them as Modified
+        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
+        db.MarkNewChildrenAdded(consultation);
         return Task.CompletedTask;
     }
 

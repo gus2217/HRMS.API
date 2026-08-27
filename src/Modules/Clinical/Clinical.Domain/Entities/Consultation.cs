@@ -70,6 +70,24 @@ public sealed class Consultation : AggregateRoot<Guid>
         return Result.Success();
     }
 
+    /// <summary>
+    /// Moves a triaged consultation into the clinical phase (Triaged → AwaitingClinician
+    /// → InConsultation) so diagnosis/complete become reachable. Guards each hop.
+    /// </summary>
+    public Result BeginClinicalPhase()
+    {
+        if (Status == ConsultationStatus.Triaged)
+            AdvanceTo(ConsultationStatus.AwaitingClinician);
+
+        if (Status == ConsultationStatus.AwaitingClinician)
+            AdvanceTo(ConsultationStatus.InConsultation);
+
+        if (Status != ConsultationStatus.InConsultation)
+            return Error.InvalidOperation($"Cannot begin clinical phase in status {Status}.");
+
+        return Result.Success();
+    }
+
     public Result RecordDiagnosis(string icdCode, string description, bool isPrimary)
     {
         if (Status is not (ConsultationStatus.InConsultation or ConsultationStatus.AwaitingLabResults

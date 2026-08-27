@@ -46,6 +46,22 @@ public sealed class RecordTriageCommandHandler(IConsultationRepository consultat
     }
 }
 
+public sealed class BeginClinicalPhaseCommandHandler(IConsultationRepository consultations)
+    : IRequestHandler<BeginClinicalPhaseCommand, Result<ConsultationDetailDto>>
+{
+    public async Task<Result<ConsultationDetailDto>> Handle(BeginClinicalPhaseCommand request, CancellationToken ct)
+    {
+        var consultation = await consultations.GetByIdAsync(request.ConsultationId, ct);
+        if (consultation is null) return Error.NotFound("Consultation not found.");
+
+        var result = consultation.BeginClinicalPhase();
+        if (result.IsFailure) return result.Error;
+
+        await consultations.UpdateAsync(consultation, ct);
+        return ConsultationMapper.ToDetail(consultation);
+    }
+}
+
 public sealed class RecordDiagnosisCommandHandler(IConsultationRepository consultations)
     : IRequestHandler<RecordDiagnosisCommand, Result<ConsultationDetailDto>>
 {

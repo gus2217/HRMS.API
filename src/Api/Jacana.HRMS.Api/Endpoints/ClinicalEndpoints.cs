@@ -25,6 +25,9 @@ public static class ClinicalEndpoints
         group.MapPost("/{id:guid}/triage", RecordTriageAsync)
             .RequireAuthorization(Permissions.Clinical.Consult);
 
+        group.MapPost("/{id:guid}/begin", BeginClinicalPhaseAsync)
+            .RequireAuthorization(Permissions.Clinical.Consult);
+
         group.MapPost("/{id:guid}/diagnoses", RecordDiagnosisAsync)
             .RequireAuthorization(Permissions.Clinical.RecordDiagnosis);
 
@@ -59,6 +62,12 @@ public static class ClinicalEndpoints
         var result = await sender.Send(new RecordTriageCommand(
             id, request.TemperatureCelsius, request.BloodPressure, request.PulseRate,
             request.RespiratoryRate, request.WeightKg), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> BeginClinicalPhaseAsync(Guid id, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new BeginClinicalPhaseCommand(id), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

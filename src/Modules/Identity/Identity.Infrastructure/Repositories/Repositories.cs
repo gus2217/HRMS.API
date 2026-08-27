@@ -2,6 +2,7 @@ using Jacana.Identity.Application.Abstractions;
 using Jacana.Identity.Domain;
 using Jacana.Identity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Jacana.SharedKernel.Infrastructure.Persistence;
 
 namespace Jacana.Identity.Infrastructure.Repositories;
 
@@ -25,7 +26,10 @@ public sealed class UserRepository(IdentityDbContext db) : IUserRepository
 
     public Task UpdateAsync(User user, CancellationToken ct = default)
     {
-        db.Entry(user).State = EntityState.Modified;
+        // Aggregate already tracked from GetByIdAsync. New children carry
+        // client-generated keys; EF DetectChanges would classify them as Modified
+        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
+        db.MarkNewChildrenAdded(user);
         return Task.CompletedTask;
     }
 
@@ -88,7 +92,8 @@ public sealed class RefreshTokenRepository(IdentityDbContext db) : IRefreshToken
 
     public Task UpdateAsync(RefreshToken refreshToken, CancellationToken ct = default)
     {
-        db.Entry(refreshToken).State = EntityState.Modified;
+        // Entity already tracked from GetByIdAsync; mutations auto-detected.
+        // Never force graph state — it marks new children as Modified (UPDATE 0 rows).
         return Task.CompletedTask;
     }
 }
