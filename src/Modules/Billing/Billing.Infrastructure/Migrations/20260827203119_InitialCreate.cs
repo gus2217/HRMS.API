@@ -20,11 +20,11 @@ namespace Jacana.Billing.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     PatientId = table.Column<Guid>(type: "uuid", nullable: false),
                     ConsultationId = table.Column<Guid>(type: "uuid", nullable: true),
                     Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     PrimaryPaymentMethod = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
+                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ModifiedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -45,14 +45,14 @@ namespace Jacana.Billing.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     InvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
-                    AmountPaid = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    Currency = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
                     Method = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     ProviderTransactionReference = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     ReceivedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    AmountPaid = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    Currency = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
+                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ModifiedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -73,12 +73,12 @@ namespace Jacana.Billing.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     InvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
                     ShaClaimReference = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     RejectionReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     SubmittedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ModifiedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -102,9 +102,9 @@ namespace Jacana.Billing.Infrastructure.Migrations
                     ServiceCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     Description = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
+                    InvoiceId = table.Column<Guid>(type: "uuid", nullable: true),
                     UnitPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    Currency = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
-                    InvoiceId = table.Column<Guid>(type: "uuid", nullable: true)
+                    Currency = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false)
                 },
                 constraints: table =>
                 {

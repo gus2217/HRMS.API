@@ -17,12 +17,12 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.PasswordHash).IsRequired();
 
-        builder.OwnsOne(u => u.Phone, phone =>
+        builder.ComplexProperty(u => u.Phone, phone =>
         {
             phone.Property(p => p.Value).HasColumnName("Phone").HasMaxLength(20).IsRequired();
         });
 
-        builder.OwnsOne(u => u.FacilityId, f =>
+        builder.ComplexProperty(u => u.FacilityId, f =>
         {
             f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired();
         });

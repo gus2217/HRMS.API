@@ -16,7 +16,7 @@ public sealed class PrescriptionConfiguration : IEntityTypeConfiguration<Prescri
         builder.Property(p => p.PrescribedAtUtc).IsRequired();
         builder.Property(p => p.Status).HasConversion<string>().HasMaxLength(32);
 
-        builder.OwnsOne(p => p.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(p => p.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.Property(p => p.RowVersion).IsRowVersion();
 
         builder.HasMany(p => p.Items).WithOne().HasForeignKey("PrescriptionId").OnDelete(DeleteBehavior.Cascade);
@@ -48,7 +48,7 @@ public sealed class DispenseRecordConfiguration : IEntityTypeConfiguration<Dispe
         builder.Property(d => d.DispensedByUserId).IsRequired();
         builder.Property(d => d.DispensedAtUtc).IsRequired();
 
-        builder.OwnsOne(d => d.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(d => d.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.Property(d => d.RowVersion).IsRowVersion();
     }
 }

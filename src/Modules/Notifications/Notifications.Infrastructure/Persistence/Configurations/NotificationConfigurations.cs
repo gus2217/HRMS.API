@@ -18,7 +18,7 @@ public sealed class NotificationMessageConfiguration : IEntityTypeConfiguration<
         builder.Property(m => m.AttemptCount).IsRequired();
         builder.Property(m => m.LastError).HasMaxLength(1000);
 
-        builder.OwnsOne(m => m.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(m => m.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.Property(m => m.RowVersion).IsRowVersion();
     }
 }

@@ -17,8 +17,8 @@ public sealed class DrugConfiguration : IEntityTypeConfiguration<Drug>
         builder.Property(d => d.ReorderLevel).IsRequired();
         builder.Property(d => d.Status).HasConversion<string>().HasMaxLength(16);
 
-        builder.OwnsOne(d => d.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
-        builder.OwnsOne(d => d.UnitPrice, m =>
+        builder.ComplexProperty(d => d.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(d => d.UnitPrice, m =>
         {
             m.Property(x => x.Amount).HasColumnName("UnitPrice").HasPrecision(18, 2);
             m.Property(x => x.Currency).HasColumnName("Currency").HasConversion<string>().HasMaxLength(8);
@@ -39,8 +39,8 @@ public sealed class StockBatchConfiguration : IEntityTypeConfiguration<StockBatc
         builder.Property(b => b.QuantityOnHand).IsRequired();
         builder.Property(b => b.ExpiryDate).IsRequired();
 
-        builder.OwnsOne(b => b.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
-        builder.OwnsOne(b => b.UnitCost, m =>
+        builder.ComplexProperty(b => b.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(b => b.UnitCost, m =>
         {
             m.Property(x => x.Amount).HasColumnName("UnitCost").HasPrecision(18, 2);
             m.Property(x => x.Currency).HasColumnName("Currency").HasConversion<string>().HasMaxLength(8);
@@ -74,8 +74,8 @@ public sealed class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Name).HasMaxLength(150).IsRequired();
         builder.Property(s => s.Email).HasMaxLength(256);
-        builder.OwnsOne(s => s.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
-        builder.OwnsOne(s => s.Phone, p => p.Property(x => x.Value).HasColumnName("Phone").HasMaxLength(20).IsRequired());
+        builder.ComplexProperty(s => s.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(s => s.Phone, p => p.Property(x => x.Value).HasColumnName("Phone").HasMaxLength(20).IsRequired());
         builder.Property(s => s.RowVersion).IsRowVersion();
     }
 }

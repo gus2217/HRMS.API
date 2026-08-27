@@ -20,11 +20,11 @@ namespace Jacana.Pharmacy.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     PrescriptionItemId = table.Column<Guid>(type: "uuid", nullable: false),
                     QuantityDispensed = table.Column<int>(type: "integer", nullable: false),
                     DispensedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     DispensedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ModifiedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -45,12 +45,12 @@ namespace Jacana.Pharmacy.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     PatientId = table.Column<Guid>(type: "uuid", nullable: false),
                     ConsultationId = table.Column<Guid>(type: "uuid", nullable: false),
                     PrescribedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     PrescribedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ModifiedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),

@@ -20,21 +20,21 @@ namespace Jacana.PatientRegistration.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     PatientNumber = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
                     Gender = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     MaritalStatus = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    Phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     NationalId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
                     ShaNumber = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    Status = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     County = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    AddressLine1 = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     SubCounty = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     Ward = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    AddressLine1 = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    Status = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ModifiedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -104,8 +104,8 @@ namespace Jacana.PatientRegistration.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FullName = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
                     Relationship = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    PatientId = table.Column<Guid>(type: "uuid", nullable: true)
+                    PatientId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {

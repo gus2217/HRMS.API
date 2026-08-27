@@ -17,7 +17,7 @@ public sealed class ConsultationConfiguration : IEntityTypeConfiguration<Consult
         builder.Property(c => c.StartedAtUtc).IsRequired();
         builder.Property(c => c.CompletedAtUtc);
 
-        builder.OwnsOne(c => c.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(c => c.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.OwnsOne(c => c.Triage, t =>
         {
             t.Property(x => x.TemperatureCelsius).HasColumnName("TemperatureCelsius");

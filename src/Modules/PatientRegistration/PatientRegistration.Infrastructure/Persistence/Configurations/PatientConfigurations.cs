@@ -21,9 +21,9 @@ public sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.Property(p => p.MaritalStatus).HasConversion<string>().HasMaxLength(16);
         builder.Property(p => p.Status).HasConversion<string>().HasMaxLength(16);
 
-        builder.OwnsOne(p => p.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
-        builder.OwnsOne(p => p.Phone, ph => ph.Property(x => x.Value).HasColumnName("Phone").HasMaxLength(20).IsRequired());
-        builder.OwnsOne(p => p.Address, a =>
+        builder.ComplexProperty(p => p.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(p => p.Phone, ph => ph.Property(x => x.Value).HasColumnName("Phone").HasMaxLength(20).IsRequired());
+        builder.ComplexProperty(p => p.Address, a =>
         {
             a.Property(x => x.County).HasColumnName("County").HasMaxLength(100).IsRequired();
             a.Property(x => x.SubCounty).HasColumnName("SubCounty").HasMaxLength(100);
@@ -49,7 +49,7 @@ public sealed class NextOfKinConfiguration : IEntityTypeConfiguration<NextOfKin>
         builder.HasKey(k => k.Id);
         builder.Property(k => k.FullName).HasMaxLength(150).IsRequired();
         builder.Property(k => k.Relationship).HasMaxLength(50).IsRequired();
-        builder.OwnsOne(k => k.Phone, p => p.Property(x => x.Value).HasColumnName("Phone").HasMaxLength(20).IsRequired());
+        builder.ComplexProperty(k => k.Phone, p => p.Property(x => x.Value).HasColumnName("Phone").HasMaxLength(20).IsRequired());
     }
 }
 

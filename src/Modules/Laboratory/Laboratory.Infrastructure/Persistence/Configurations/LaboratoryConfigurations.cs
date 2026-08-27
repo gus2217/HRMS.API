@@ -16,7 +16,7 @@ public sealed class LabOrderConfiguration : IEntityTypeConfiguration<LabOrder>
         builder.Property(o => o.OrderedAtUtc).IsRequired();
         builder.Property(o => o.Status).HasConversion<string>().HasMaxLength(32);
 
-        builder.OwnsOne(o => o.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(o => o.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.Property(o => o.RowVersion).IsRowVersion();
 
         builder.HasMany(o => o.Tests).WithOne().HasForeignKey("LabOrderId").OnDelete(DeleteBehavior.Cascade);

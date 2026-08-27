@@ -15,7 +15,7 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(i => i.Status).HasConversion<string>().HasMaxLength(32);
         builder.Property(i => i.PrimaryPaymentMethod).HasConversion<string>().HasMaxLength(32);
 
-        builder.OwnsOne(i => i.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(i => i.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.Property(i => i.RowVersion).IsRowVersion();
 
         // TotalAmount is a computed getter-only property (sum of lines); it is not
@@ -36,7 +36,7 @@ public sealed class InvoiceLineConfiguration : IEntityTypeConfiguration<InvoiceL
         builder.Property(l => l.ServiceCode).HasMaxLength(64).IsRequired();
         builder.Property(l => l.Description).HasMaxLength(300).IsRequired();
         builder.Property(l => l.Quantity).IsRequired();
-        builder.OwnsOne(l => l.UnitPrice, m =>
+        builder.ComplexProperty(l => l.UnitPrice, m =>
         {
             m.Property(x => x.Amount).HasColumnName("UnitPrice").HasPrecision(18, 2);
             m.Property(x => x.Currency).HasColumnName("Currency").HasConversion<string>().HasMaxLength(8);
@@ -58,8 +58,8 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.Status).HasConversion<string>().HasMaxLength(32);
         builder.Property(p => p.ReceivedAtUtc).IsRequired();
 
-        builder.OwnsOne(p => p.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
-        builder.OwnsOne(p => p.AmountPaid, m =>
+        builder.ComplexProperty(p => p.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(p => p.AmountPaid, m =>
         {
             m.Property(x => x.Amount).HasColumnName("AmountPaid").HasPrecision(18, 2);
             m.Property(x => x.Currency).HasColumnName("Currency").HasConversion<string>().HasMaxLength(8);
@@ -82,7 +82,7 @@ public sealed class ShaClaimConfiguration : IEntityTypeConfiguration<ShaClaim>
         builder.Property(c => c.RejectionReason).HasMaxLength(500);
         builder.Property(c => c.SubmittedAtUtc).IsRequired();
 
-        builder.OwnsOne(c => c.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.ComplexProperty(c => c.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.Property(c => c.RowVersion).IsRowVersion();
     }
 }

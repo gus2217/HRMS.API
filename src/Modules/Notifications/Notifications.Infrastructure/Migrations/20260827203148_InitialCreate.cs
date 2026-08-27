@@ -20,7 +20,6 @@ namespace Jacana.Notifications.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     Channel = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     RecipientPhoneOrEmail = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     TemplateCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
@@ -28,6 +27,7 @@ namespace Jacana.Notifications.Infrastructure.Migrations
                     Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     AttemptCount = table.Column<int>(type: "integer", nullable: false),
                     LastError = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    FacilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ModifiedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
