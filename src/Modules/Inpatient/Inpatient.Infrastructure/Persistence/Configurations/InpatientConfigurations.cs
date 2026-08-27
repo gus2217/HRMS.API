@@ -19,7 +19,7 @@ public sealed class AdmissionConfiguration : IEntityTypeConfiguration<Admission>
         builder.Property(a => a.DischargedAtUtc);
 
         builder.ComplexProperty(a => a.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
-        builder.Property(a => a.RowVersion).IsRowVersion();
+        builder.Property(a => a.RowVersion).IsConcurrencyToken();
 
         builder.HasMany(a => a.Notes).WithOne().HasForeignKey("AdmissionId").OnDelete(DeleteBehavior.Cascade);
     }

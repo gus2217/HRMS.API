@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Jacana.Laboratory.Infrastructure.Migrations
 {
     [DbContext(typeof(LaboratoryDbContext))]
-    [Migration("20260827203104_InitialCreate")]
+    [Migration("20260827204612_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -69,7 +69,6 @@ namespace Jacana.Laboratory.Infrastructure.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.Property<string>("Status")

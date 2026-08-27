@@ -33,7 +33,7 @@ public sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
 
         builder.Property(p => p.ShaNumber).HasMaxLength(64);
 
-        builder.Property(p => p.RowVersion).IsRowVersion();
+        builder.Property(p => p.RowVersion).IsConcurrencyToken();
 
         builder.HasMany(p => p.NextOfKin).WithOne().HasForeignKey("PatientId").OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(p => p.Allergies).WithOne().HasForeignKey("PatientId").OnDelete(DeleteBehavior.Cascade);

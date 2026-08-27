@@ -16,7 +16,7 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(i => i.PrimaryPaymentMethod).HasConversion<string>().HasMaxLength(32);
 
         builder.ComplexProperty(i => i.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
-        builder.Property(i => i.RowVersion).IsRowVersion();
+        builder.Property(i => i.RowVersion).IsConcurrencyToken();
 
         // TotalAmount is a computed getter-only property (sum of lines); it is not
         // persisted. For query performance in production, add a shadow column and
@@ -65,7 +65,7 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             m.Property(x => x.Currency).HasColumnName("Currency").HasConversion<string>().HasMaxLength(8);
         });
 
-        builder.Property(p => p.RowVersion).IsRowVersion();
+        builder.Property(p => p.RowVersion).IsConcurrencyToken();
     }
 }
 
@@ -83,6 +83,6 @@ public sealed class ShaClaimConfiguration : IEntityTypeConfiguration<ShaClaim>
         builder.Property(c => c.SubmittedAtUtc).IsRequired();
 
         builder.ComplexProperty(c => c.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
-        builder.Property(c => c.RowVersion).IsRowVersion();
+        builder.Property(c => c.RowVersion).IsConcurrencyToken();
     }
 }

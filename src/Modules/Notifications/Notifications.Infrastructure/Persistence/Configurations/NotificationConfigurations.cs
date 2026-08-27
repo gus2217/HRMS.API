@@ -19,6 +19,6 @@ public sealed class NotificationMessageConfiguration : IEntityTypeConfiguration<
         builder.Property(m => m.LastError).HasMaxLength(1000);
 
         builder.ComplexProperty(m => m.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
-        builder.Property(m => m.RowVersion).IsRowVersion();
+        builder.Property(m => m.RowVersion).IsConcurrencyToken();
     }
 }

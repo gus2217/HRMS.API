@@ -27,7 +27,7 @@ public sealed class ConsultationConfiguration : IEntityTypeConfiguration<Consult
             t.Property(x => x.WeightKg).HasColumnName("WeightKg");
         });
 
-        builder.Property(c => c.RowVersion).IsRowVersion();
+        builder.Property(c => c.RowVersion).IsConcurrencyToken();
 
         builder.HasMany(c => c.Diagnoses).WithOne().HasForeignKey("ConsultationId").OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(c => c.Notes).WithOne().HasForeignKey("ConsultationId").OnDelete(DeleteBehavior.Cascade);

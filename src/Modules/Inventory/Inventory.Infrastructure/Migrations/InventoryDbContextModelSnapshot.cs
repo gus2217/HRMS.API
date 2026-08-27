@@ -72,7 +72,6 @@ namespace Jacana.Inventory.Infrastructure.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.Property<string>("Status")
@@ -157,7 +156,6 @@ namespace Jacana.Inventory.Infrastructure.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.ComplexProperty<Dictionary<string, object>>("FacilityId", "Jacana.Inventory.Domain.StockBatch.FacilityId#FacilityId", b1 =>
@@ -263,7 +261,6 @@ namespace Jacana.Inventory.Infrastructure.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.ComplexProperty<Dictionary<string, object>>("FacilityId", "Jacana.Inventory.Domain.Supplier.FacilityId#FacilityId", b1 =>

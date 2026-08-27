@@ -24,7 +24,7 @@ public sealed class DrugConfiguration : IEntityTypeConfiguration<Drug>
             m.Property(x => x.Currency).HasColumnName("Currency").HasConversion<string>().HasMaxLength(8);
         });
 
-        builder.Property(d => d.RowVersion).IsRowVersion();
+        builder.Property(d => d.RowVersion).IsConcurrencyToken();
     }
 }
 
@@ -46,7 +46,7 @@ public sealed class StockBatchConfiguration : IEntityTypeConfiguration<StockBatc
             m.Property(x => x.Currency).HasColumnName("Currency").HasConversion<string>().HasMaxLength(8);
         });
 
-        builder.Property(b => b.RowVersion).IsRowVersion();
+        builder.Property(b => b.RowVersion).IsConcurrencyToken();
 
         builder.HasMany(b => b.Movements).WithOne().HasForeignKey("StockBatchId").OnDelete(DeleteBehavior.Cascade);
     }
@@ -76,6 +76,6 @@ public sealed class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
         builder.Property(s => s.Email).HasMaxLength(256);
         builder.ComplexProperty(s => s.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.ComplexProperty(s => s.Phone, p => p.Property(x => x.Value).HasColumnName("Phone").HasMaxLength(20).IsRequired());
-        builder.Property(s => s.RowVersion).IsRowVersion();
+        builder.Property(s => s.RowVersion).IsConcurrencyToken();
     }
 }

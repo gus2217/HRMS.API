@@ -28,7 +28,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         });
 
         builder.Property(u => u.Status).HasConversion<string>().HasMaxLength(32);
-        builder.Property(u => u.RowVersion).IsRowVersion();
+        builder.Property(u => u.RowVersion).IsConcurrencyToken();
 
         builder.HasMany(u => u.Roles)
             .WithOne(ur => ur.User)
