@@ -37,11 +37,17 @@ using Jacana.SharedKernel.Infrastructure.Time;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Minimal APIs must bind enum values from their JSON string names (e.g. "Female",
+// "Single") — the frontend sends strings, not integers.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // ── Serilog structured logging ────────────────────────────────────────────────
 builder.Host.UseSerilog((context, services, config) => config
