@@ -1,0 +1,6 @@
+<Project>
+  <!-- Banned API analyzer: blocks blocking-over-async (.Result, .Wait(), sync GetResult) -->
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,60 @@
+namespace Jacana.Identity.Application;
+
+/// <summary>
+/// Canonical permission codes. Handlers and policies reference these constants —
+/// never raw string literals. Values follow {Module}.{Action} convention.
+/// </summary>
+public static class Permissions
+{
+    public static class Users
+    {
+        public const string View = "Identity.User.View";
+        public const string Register = "Identity.User.Register";
+        public const string AssignRole = "Identity.User.AssignRole";
+        public const string Suspend = "Identity.User.Suspend";
+    }
+
+    public static class Roles
+    {
+        public const string View = "Identity.Role.View";
+        public const string Manage = "Identity.Role.Manage";
+    }
+
+    public static class Patients
+    {
+        public const string Register = "Patient.Register";
+        public const string View = "Patient.View";
+        public const string Update = "Patient.Update";
+    }
+
+    public static class Billing
+    {
+        public const string IssueInvoice = "Billing.IssueInvoice";
+        public const string RecordPayment = "Billing.RecordPayment";
+        public const string View = "Billing.View";
+    }
+
+    public static class Clinical
+    {
+        public const string Consult = "Clinical.Consult";
+        public const string RecordDiagnosis = "Clinical.RecordDiagnosis";
+        public const string View = "Clinical.View";
+    }
+
+    public static class Lab
+    {
+        public const string Order = "Laboratory.Order";
+        public const string RecordResult = "Laboratory.RecordResult";
+    }
+
+    public static class Pharmacy
+    {
+        public const string Dispense = "Pharmacy.Dispense";
+    }
+
+    public static class Inventory
+    {
+        public const string Receive = "Inventory.Receive";
+        public const string Adjust = "Inventory.Adjust";
+    }
+}

@@ -1,0 +1,6 @@
+# Blocking sync-over-async is forbidden project-wide (async end-to-end rule).
+M:System.Threading.Tasks.Task`1.get_Result;Blocking I/O — do not use .Result
+M:System.Threading.Tasks.Task.Wait;Blocking I/O — do not use .Wait()
+M:System.Threading.Tasks.Task`1.Wait;Blocking I/O — do not use .Wait()
+M:System.Runtime.CompilerServices.TaskAwaiter.GetResult;Blocking I/O — do not use GetAwaiter().GetResult()
+M:System.Runtime.CompilerServices.TaskAwaiter`1.GetResult;Blocking I/O — do not use GetAwaiter().GetResult()

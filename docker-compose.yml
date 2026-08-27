@@ -1,0 +1,53 @@
+version: "3.9"
+
+# Jacana HRMS — local development infrastructure.
+# Postgres (single DB, one schema per module) + Redis (distributed cache).
+# Hangfire runs in-process in the API (AddHangfireServer) and uses Postgres for storage,
+# so it needs no separate container here. OTLP collector included for OpenTelemetry tracing.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jacana-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-jacana_hrms}
+      POSTGRES_USER: ${POSTGRES_USER:-jacana}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jacana}
+    ports:
+      - "5432:5432"
+    volumes:
+      - jacana_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jacana} -d ${POSTGRES_DB:-jacana_hrms}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: jacana-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - jacana_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # OpenTelemetry collector (traces) — optional; remove if not tracing locally.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: jacana-otel
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+
+volumes:
+  jacana_pgdata:
+  jacana_redisdata:

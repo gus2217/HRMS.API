@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Jacana.SharedKernel.Domain</AssemblyName>
+    <RootNamespace>Jacana.SharedKernel.Domain</RootNamespace>
+  </PropertyGroup>
+</Project>
