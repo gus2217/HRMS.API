@@ -39,9 +39,9 @@ public static class IdentityEndpoints
 
         // Web client: tokens in HttpOnly cookies; bearer clients read the JSON body.
         var value = result.Value;
-        if (value.AccessToken is not null)
+        if (isWebClient(httpContext) && value.AccessToken is not null)
         {
-            SetAuthCookies(httpContext, value.AccessToken, value.RefreshToken!, isWebClient(httpContext));
+            SetAuthCookies(httpContext, value.AccessToken, value.RefreshToken!, true);
         }
         return Results.Ok(value);
     }
@@ -92,7 +92,16 @@ public static class IdentityEndpoints
     }
 
     private static bool isWebClient(HttpContext context)
-        => !context.Request.Headers.Authorization.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase);
+    {
+        // The SPA is a bearer-token client and sends X-Auth-Mode: bearer on every
+        // request (including login/refresh, where no Bearer header exists yet).
+        // Never set HttpOnly cookies for it, or the cookie scheme will authenticate
+        // the refresh request and the CSRF middleware will reject it.
+        if (context.Request.Headers["X-Auth-Mode"].ToString().Equals("bearer", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return !context.Request.Headers.Authorization.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static IResult MapError(Error error) => error.Code switch
     {

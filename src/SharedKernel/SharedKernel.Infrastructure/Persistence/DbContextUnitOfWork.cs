@@ -1,4 +1,6 @@
 using Jacana.SharedKernel.Application.Abstractions;
+using Jacana.SharedKernel.Application.Common;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Jacana.SharedKernel.Infrastructure.Persistence;
@@ -10,6 +12,8 @@ namespace Jacana.SharedKernel.Infrastructure.Persistence;
 public sealed class DbContextUnitOfWork<TContext>(TContext dbContext) : IUnitOfWork
     where TContext : DbContext
 {
+    public bool HasChanges => dbContext.ChangeTracker.HasChanges();
+
     public Task<int> SaveChangesAsync(CancellationToken ct = default)
         => dbContext.SaveChangesAsync(ct);
 }
