@@ -11,8 +11,10 @@ using Jacana.Notifications.Infrastructure.Persistence;
 using Jacana.PatientRegistration.Infrastructure.Persistence;
 using Jacana.Pharmacy.Infrastructure.Persistence;
 using Jacana.SharedKernel.Domain;
+using Jacana.SharedKernel.Infrastructure;
 using Jacana.SharedKernel.Infrastructure.Outbox;
 using Jacana.SharedKernel.Infrastructure.Persistence;
+using Jacana.SharedKernel.Infrastructure.Security;
 using Jacana.SharedKernel.Infrastructure.Time;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -42,7 +44,7 @@ Console.WriteLine("Applying migrations…");
 Migrate<OutboxDbContext>(connectionString);     // outbox schema (shared)
 Migrate<AuditDbContext>(connectionString);      // audit schema (shared)
 Migrate<IdentityDbContext>(connectionString);   // identity schema
-Migrate<PatientDbContext>(connectionString);    // patient_registration
+MigratePatient(connectionString);               // patient_registration (needs encryptor)
 Migrate<ClinicalDbContext>(connectionString);   // clinical
 Migrate<InventoryDbContext>(connectionString);  // inventory
 Migrate<PharmacyDbContext>(connectionString);   // pharmacy
@@ -85,6 +87,18 @@ static void Migrate<TContext>(string cs) where TContext : DbContext
     using var db = (TContext)Activator.CreateInstance(typeof(TContext), options)!;
     db.Database.Migrate();
     Console.WriteLine($"  ✓ {typeof(TContext).Name}");
+}
+
+// PatientDbContext's constructor takes an IValueEncryptor (NationalId is encrypted
+// at rest), so it can't use the single-arg Activator path above.
+static void MigratePatient(string cs)
+{
+    var options = new DbContextOptionsBuilder<PatientDbContext>()
+        .UseNpgsql(cs)
+        .Options;
+    using var db = new PatientDbContext(options, new AesGcmValueEncryptor(DesignTime.DevEncryptionKey));
+    db.Database.Migrate();
+    Console.WriteLine("  ✓ PatientDbContext");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
