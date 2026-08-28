@@ -28,12 +28,14 @@ public sealed class PrescriptionRepository(PharmacyDbContext db) : IPrescription
     }
 
     public async Task<IReadOnlyList<PrescriptionSummaryDto>> SearchAsync(
-        string? status, int pageNumber, int pageSize, CancellationToken ct = default)
+        string? status, Guid? patientId, int pageNumber, int pageSize, CancellationToken ct = default)
     {
         var query = db.Prescriptions.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(status)
             && Enum.TryParse<PrescriptionStatus>(status, true, out var parsed))
             query = query.Where(p => p.Status == parsed);
+        if (patientId.HasValue)
+            query = query.Where(p => p.PatientId == patientId.Value);
 
         return await query
             .OrderByDescending(p => p.PrescribedAtUtc)
@@ -45,12 +47,14 @@ public sealed class PrescriptionRepository(PharmacyDbContext db) : IPrescription
             .ToListAsync(ct);
     }
 
-    public Task<int> CountAsync(string? status, CancellationToken ct = default)
+    public Task<int> CountAsync(string? status, Guid? patientId, CancellationToken ct = default)
     {
         var query = db.Prescriptions.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(status)
             && Enum.TryParse<PrescriptionStatus>(status, true, out var parsed))
             query = query.Where(p => p.Status == parsed);
+        if (patientId.HasValue)
+            query = query.Where(p => p.PatientId == patientId.Value);
         return query.CountAsync(ct);
     }
 

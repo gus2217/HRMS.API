@@ -28,12 +28,14 @@ public sealed class LabOrderRepository(LaboratoryDbContext db) : ILabOrderReposi
     }
 
     public async Task<IReadOnlyList<LabOrderSummaryDto>> SearchAsync(
-        string? status, int pageNumber, int pageSize, CancellationToken ct = default)
+        string? status, Guid? patientId, int pageNumber, int pageSize, CancellationToken ct = default)
     {
         var query = db.LabOrders.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(status)
             && Enum.TryParse<LabOrderStatus>(status, true, out var parsed))
             query = query.Where(o => o.Status == parsed);
+        if (patientId.HasValue)
+            query = query.Where(o => o.PatientId == patientId.Value);
 
         return await query
             .OrderByDescending(o => o.OrderedAtUtc)
@@ -45,12 +47,14 @@ public sealed class LabOrderRepository(LaboratoryDbContext db) : ILabOrderReposi
             .ToListAsync(ct);
     }
 
-    public Task<int> CountAsync(string? status, CancellationToken ct = default)
+    public Task<int> CountAsync(string? status, Guid? patientId, CancellationToken ct = default)
     {
         var query = db.LabOrders.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(status)
             && Enum.TryParse<LabOrderStatus>(status, true, out var parsed))
             query = query.Where(o => o.Status == parsed);
+        if (patientId.HasValue)
+            query = query.Where(o => o.PatientId == patientId.Value);
         return query.CountAsync(ct);
     }
 

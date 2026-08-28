@@ -49,6 +49,17 @@ public sealed class Prescription : AggregateRoot<Guid>
         return Result.Success();
     }
 
+    /// <summary>
+    /// Publishes <see cref="PrescriptionCreatedDomainEvent"/> (delivered via the outbox
+    /// to the Billing module for auto-billing). Call after all items are attached.
+    /// </summary>
+    public void PublishCreated()
+        => AddDomainEvent(new PrescriptionCreatedDomainEvent(
+            Id, FacilityId.Value, PatientId, ConsultationId,
+            _items.Select(i => new PrescriptionItemData(
+                i.DrugId, i.DosageInstructions, i.QuantityPrescribed)).ToArray(),
+            PrescribedAtUtc));
+
     public Result DispenseItem(Guid itemId, int quantity)
     {
         var item = _items.FirstOrDefault(i => i.Id == itemId);

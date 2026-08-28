@@ -6,12 +6,21 @@ namespace Jacana.Billing.Application.Abstractions;
 public interface IInvoiceRepository
 {
     Task<Invoice?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<Invoice?> GetByConsultationAsync(Guid consultationId, CancellationToken ct = default);
     Task AddAsync(Invoice invoice, CancellationToken ct = default);
     Task UpdateAsync(Invoice invoice, CancellationToken ct = default);
     Task<InvoiceDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<InvoiceSummaryDto>> SearchAsync(
-        string? status, int pageNumber, int pageSize, CancellationToken ct = default);
-    Task<int> CountAsync(string? status, CancellationToken ct = default);
+        string? status, Guid? consultationId, int pageNumber, int pageSize, CancellationToken ct = default);
+    Task<int> CountAsync(string? status, Guid? consultationId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Detaches the aggregate and its lines from the change tracker. Auto-billing
+    /// handlers run in one outbox batch sharing a scoped DbContext; without this,
+    /// the next handler re-uses a tracked entity with a stale RowVersion and the
+    /// UPDATE affects 0 rows (optimistic concurrency failure).
+    /// </summary>
+    void Detach(Invoice invoice);
 }
 
 public interface IPaymentRepository

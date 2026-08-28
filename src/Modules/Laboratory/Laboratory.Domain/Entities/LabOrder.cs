@@ -48,6 +48,16 @@ public sealed class LabOrder : AggregateRoot<Guid>
     }
 
     /// <summary>
+    /// Publishes <see cref="LabOrderCreatedDomainEvent"/> (delivered via the outbox
+    /// to the Billing module for auto-billing). Call after all tests are attached.
+    /// </summary>
+    public void PublishCreated()
+        => AddDomainEvent(new LabOrderCreatedDomainEvent(
+            Id, FacilityId.Value, PatientId, ConsultationId,
+            _tests.Select(t => new LabTestData(t.TestCode, t.TestName)).ToArray(),
+            OrderedAtUtc));
+
+    /// <summary>
     /// Records a result on a test and publishes <see cref="LabResultRecordedDomainEvent"/>
     /// (delivered via the outbox to the Notifications module).
     /// </summary>

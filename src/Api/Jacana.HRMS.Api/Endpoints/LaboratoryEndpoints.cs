@@ -38,9 +38,9 @@ public static class LaboratoryEndpoints
     }
 
     private static async Task<IResult> SearchLabOrdersAsync(
-        ISender sender, CancellationToken ct, string? status = null, int pageNumber = 1, int pageSize = 20)
+        ISender sender, CancellationToken ct, string? status = null, Guid? patientId = null, int pageNumber = 1, int pageSize = 20)
     {
-        var result = await sender.Send(new SearchLabOrdersQuery(pageNumber, pageSize, status), ct);
+        var result = await sender.Send(new SearchLabOrdersQuery(pageNumber, pageSize, status, patientId), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

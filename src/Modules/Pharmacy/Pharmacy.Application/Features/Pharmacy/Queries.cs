@@ -8,5 +8,5 @@ namespace Jacana.Pharmacy.Application.Features.Pharmacy;
 public sealed record GetPrescriptionQuery(Guid PrescriptionId)
     : IQuery<Result<PrescriptionDetailDto>>;
 
-public sealed record SearchPrescriptionsQuery(int PageNumber, int PageSize, string? Status = null)
+public sealed record SearchPrescriptionsQuery(int PageNumber, int PageSize, string? Status = null, Guid? PatientId = null)
     : IQuery<Result<PagedResult<PrescriptionListItemDto>>>;

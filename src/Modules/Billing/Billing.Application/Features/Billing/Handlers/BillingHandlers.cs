@@ -192,8 +192,8 @@ public sealed class SearchInvoicesQueryHandler(
         SearchInvoicesQuery request, CancellationToken ct)
     {
         var items = await invoices.SearchAsync(
-            request.Status, request.PageNumber, request.PageSize, ct);
-        var total = await invoices.CountAsync(request.Status, ct);
+            request.Status, request.ConsultationId, request.PageNumber, request.PageSize, ct);
+        var total = await invoices.CountAsync(request.Status, request.ConsultationId, ct);
 
         var identities = await patients.GetIdentitiesAsync(
             items.Select(i => i.PatientId).ToArray(), ct);

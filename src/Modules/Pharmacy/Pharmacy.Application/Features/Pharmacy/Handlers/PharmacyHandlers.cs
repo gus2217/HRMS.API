@@ -27,6 +27,7 @@ public sealed class CreatePrescriptionCommandHandler(
             if (add.IsFailure) return add.Error;
         }
 
+        prescription.Value.PublishCreated();
         await prescriptions.AddAsync(prescription.Value, ct);
         // Map from the in-memory aggregate — the unit-of-work transaction has not
         // committed yet, so a re-query would not see the new row.
@@ -89,8 +90,8 @@ public sealed class SearchPrescriptionsQueryHandler(
         SearchPrescriptionsQuery request, CancellationToken ct)
     {
         var items = await prescriptions.SearchAsync(
-            request.Status, request.PageNumber, request.PageSize, ct);
-        var total = await prescriptions.CountAsync(request.Status, ct);
+            request.Status, request.PatientId, request.PageNumber, request.PageSize, ct);
+        var total = await prescriptions.CountAsync(request.Status, request.PatientId, ct);
 
         var identities = await patients.GetIdentitiesAsync(
             items.Select(i => i.PatientId).ToArray(), ct);

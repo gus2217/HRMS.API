@@ -146,6 +146,10 @@ builder.Services.AddHangfireServer();
 builder.Services.AddDbContext<OutboxDbContext>(o => o.UseNpgsql(connectionString));
 builder.Services.AddScoped<OutboxDispatcher>();
 
+// Auto-billing fees for consultations (config section "Billing").
+builder.Services.Configure<Jacana.Billing.Application.Features.Billing.DomainEventHandlers.BillingFeeOptions>(
+    builder.Configuration.GetSection("Billing"));
+
 // ── Minimal API ────────────────────────────────────────────────────────────────
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -186,6 +190,12 @@ app.UseAuthorization();
 app.UseMiddleware<CsrfProtectionMiddleware>();
 
 app.UseHangfireDashboard();
+
+// Dispatch outbox messages (domain events → MediatR handlers) every 10 seconds.
+RecurringJob.AddOrUpdate<OutboxDispatcher>(
+    "outbox-dispatcher",
+    d => d.DispatchAsync(20, CancellationToken.None),
+    "*/10 * * * * *");
 
 // ── Endpoints ──────────────────────────────────────────────────────────────────
 app.MapIdentityEndpoints();

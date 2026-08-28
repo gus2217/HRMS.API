@@ -47,9 +47,9 @@ public static class BillingEndpoints
     }
 
     private static async Task<IResult> SearchInvoicesAsync(
-        ISender sender, CancellationToken ct, string? status = null, int pageNumber = 1, int pageSize = 20)
+        ISender sender, CancellationToken ct, string? status = null, Guid? consultationId = null, int pageNumber = 1, int pageSize = 20)
     {
-        var result = await sender.Send(new SearchInvoicesQuery(pageNumber, pageSize, status), ct);
+        var result = await sender.Send(new SearchInvoicesQuery(pageNumber, pageSize, status, consultationId), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

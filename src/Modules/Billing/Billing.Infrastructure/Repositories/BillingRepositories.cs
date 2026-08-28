@@ -12,6 +12,20 @@ public sealed class InvoiceRepository(BillingDbContext db) : IInvoiceRepository
     public async Task<Invoice?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => await db.Invoices.Include(i => i.Lines).FirstOrDefaultAsync(i => i.Id == id, ct);
 
+    /// <summary>Latest invoice for a consultation (used by auto-billing).</summary>
+    public Task<Invoice?> GetByConsultationAsync(Guid consultationId, CancellationToken ct = default)
+        => db.Invoices.Include(i => i.Lines)
+            .Where(i => i.ConsultationId == consultationId)
+            .OrderByDescending(i => i.CreatedAtUtc)
+            .FirstOrDefaultAsync(ct);
+
+    public void Detach(Invoice invoice)
+    {
+        db.Entry(invoice).State = EntityState.Detached;
+        foreach (var line in invoice.Lines)
+            db.Entry(line).State = EntityState.Detached;
+    }
+
     public Task AddAsync(Invoice invoice, CancellationToken ct = default)
     {
         db.Invoices.Add(invoice);
@@ -28,12 +42,14 @@ public sealed class InvoiceRepository(BillingDbContext db) : IInvoiceRepository
     }
 
     public async Task<IReadOnlyList<InvoiceSummaryDto>> SearchAsync(
-        string? status, int pageNumber, int pageSize, CancellationToken ct = default)
+        string? status, Guid? consultationId, int pageNumber, int pageSize, CancellationToken ct = default)
     {
         var query = db.Invoices.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(status)
             && Enum.TryParse<InvoiceStatus>(status, true, out var parsed))
             query = query.Where(i => i.Status == parsed);
+        if (consultationId.HasValue)
+            query = query.Where(i => i.ConsultationId == consultationId.Value);
 
         return await query
             .OrderByDescending(i => i.CreatedAtUtc)
@@ -45,12 +61,14 @@ public sealed class InvoiceRepository(BillingDbContext db) : IInvoiceRepository
             .ToListAsync(ct);
     }
 
-    public Task<int> CountAsync(string? status, CancellationToken ct = default)
+    public Task<int> CountAsync(string? status, Guid? consultationId, CancellationToken ct = default)
     {
         var query = db.Invoices.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(status)
             && Enum.TryParse<InvoiceStatus>(status, true, out var parsed))
             query = query.Where(i => i.Status == parsed);
+        if (consultationId.HasValue)
+            query = query.Where(i => i.ConsultationId == consultationId.Value);
         return query.CountAsync(ct);
     }
 

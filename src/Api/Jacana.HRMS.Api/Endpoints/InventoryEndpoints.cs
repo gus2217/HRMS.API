@@ -1,3 +1,4 @@
+using Jacana.HRMS.Api.Auth;
 using Jacana.Identity.Application;
 using Jacana.Inventory.Application.Features.Inventory;
 using Jacana.Inventory.Application.DTOs;
@@ -14,7 +15,12 @@ public static class InventoryEndpoints
         var group = app.MapGroup("/api/v1/inventory");
 
         group.MapGet("/drugs", GetDrugCatalogAsync)
-            .RequireAuthorization(Permissions.Inventory.Receive);
+            .RequireAuthorization(policy => policy
+                .RequireAuthenticatedUser()
+                .RequireAssertion(ctx =>
+                    ctx.User.HasClaim(PermissionPolicies.PermissionClaim, Permissions.Pharmacy.Dispense)
+                    || ctx.User.HasClaim(PermissionPolicies.PermissionClaim, Permissions.Clinical.RecordDiagnosis)
+                    || ctx.User.HasClaim(PermissionPolicies.PermissionClaim, Permissions.Inventory.Receive)));
 
         group.MapPost("/drugs", CreateDrugAsync)
             .RequireAuthorization(Permissions.Inventory.Receive);

@@ -138,6 +138,7 @@ public sealed class Consultation : AggregateRoot<Guid>
 
         AdvanceTo(ConsultationStatus.Completed);
         CompletedAtUtc = completedAtUtc;
+        AddDomainEvent(new ConsultationCompletedDomainEvent(Id, FacilityId.Value, PatientId, completedAtUtc));
         return Result.Success();
     }
 

@@ -27,6 +27,7 @@ public sealed class CreateLabOrderCommandHandler(
             if (add.IsFailure) return add.Error;
         }
 
+        order.Value.PublishCreated();
         await orders.AddAsync(order.Value, ct);
         // Map from the in-memory aggregate — the unit-of-work transaction has not
         // committed yet, so a re-query would not see the new row.
@@ -74,8 +75,8 @@ public sealed class SearchLabOrdersQueryHandler(
         SearchLabOrdersQuery request, CancellationToken ct)
     {
         var items = await orders.SearchAsync(
-            request.Status, request.PageNumber, request.PageSize, ct);
-        var total = await orders.CountAsync(request.Status, ct);
+            request.Status, request.PatientId, request.PageNumber, request.PageSize, ct);
+        var total = await orders.CountAsync(request.Status, request.PatientId, ct);
 
         var identities = await patients.GetIdentitiesAsync(
             items.Select(i => i.PatientId).ToArray(), ct);
