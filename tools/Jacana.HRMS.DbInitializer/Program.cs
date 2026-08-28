@@ -174,6 +174,7 @@ static async Task SeedIdentityAsync(string cs, string password)
         [nameof(SystemRole.Nurse)] = new[]
         {
             "Patient.View", "Patient.Register", "Clinical.View", "Laboratory.Order",
+            "Clinical.Consult", // triage, begin phase, clinical notes
         },
         [nameof(SystemRole.Receptionist)] = new[]
         {
@@ -204,15 +205,26 @@ static async Task SeedIdentityAsync(string cs, string password)
     foreach (var (roleName, codes) in roleGrants)
     {
         var existing = await db.Roles
+            .Include(r => r.Permissions)
             .FirstOrDefaultAsync(r => r.Name == roleName);
         var role = existing ?? Role.Create(Guid.NewGuid(), roleName).Value;
 
-        // Only new roles need their grants persisted; existing roles are left as-is.
         if (existing is null)
         {
             db.Roles.Add(role);
             foreach (var code in codes)
                 role.Grant(permissions[code]);
+        }
+        else
+        {
+            // Idempotent re-seed: sync the role to the canonical grant set so
+            // re-running the initializer applies seed changes to existing roles.
+            var currentCodes = role.Permissions.Select(p => p.Permission.Code).ToHashSet();
+            foreach (var code in codes)
+            {
+                if (!currentCodes.Contains(code))
+                    role.Grant(permissions[code]);
+            }
         }
         roles[roleName] = role;
     }
