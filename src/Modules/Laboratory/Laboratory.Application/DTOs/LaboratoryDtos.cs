@@ -18,6 +18,17 @@ public sealed record LabOrderSummaryDto(
     DateTime OrderedAtUtc,
     int TestCount);
 
+/// <summary>List-view row with patient display identity resolved cross-schema.</summary>
+public sealed record LabOrderListItemDto(
+    Guid Id,
+    Guid PatientId,
+    string PatientNumber,
+    string PatientName,
+    Guid OrderedByUserId,
+    string Status,
+    DateTime OrderedAtUtc,
+    int TestCount);
+
 public sealed record LabOrderDetailDto(
     Guid Id,
     Guid PatientId,

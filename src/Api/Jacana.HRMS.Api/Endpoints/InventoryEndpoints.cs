@@ -13,6 +13,9 @@ public static class InventoryEndpoints
     {
         var group = app.MapGroup("/api/v1/inventory");
 
+        group.MapGet("/drugs", GetDrugCatalogAsync)
+            .RequireAuthorization(Permissions.Inventory.Receive);
+
         group.MapPost("/drugs", CreateDrugAsync)
             .RequireAuthorization(Permissions.Inventory.Receive);
 
@@ -29,6 +32,13 @@ public static class InventoryEndpoints
             .RequireAuthorization(Permissions.Inventory.Receive);
 
         return app;
+    }
+
+    private static async Task<IResult> GetDrugCatalogAsync(
+        ISender sender, CancellationToken ct, string? search = null, int pageNumber = 1, int pageSize = 100)
+    {
+        var result = await sender.Send(new GetDrugCatalogQuery(pageNumber, pageSize, search), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 
     private static async Task<IResult> CreateDrugAsync(

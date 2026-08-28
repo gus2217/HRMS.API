@@ -16,6 +16,9 @@ public static class LaboratoryEndpoints
         group.MapPost("/orders", CreateLabOrderAsync)
             .RequireAuthorization(Permissions.Lab.Order);
 
+        group.MapGet("/orders", SearchLabOrdersAsync)
+            .RequireAuthorization(Permissions.Lab.Order);
+
         group.MapGet("/orders/{id:guid}", GetLabOrderAsync)
             .RequireAuthorization(Permissions.Lab.Order);
 
@@ -32,6 +35,13 @@ public static class LaboratoryEndpoints
             request.PatientId, request.ConsultationId,
             request.Tests.Select(t => new LabTestInput(t.TestCode, t.TestName)).ToArray()), ct);
         return result.IsSuccess ? Results.Created($"/api/v1/lab/orders/{result.Value.Id}", result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> SearchLabOrdersAsync(
+        ISender sender, CancellationToken ct, string? status = null, int pageNumber = 1, int pageSize = 20)
+    {
+        var result = await sender.Send(new SearchLabOrdersQuery(pageNumber, pageSize, status), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 
     private static async Task<IResult> GetLabOrderAsync(Guid id, ISender sender, CancellationToken ct)

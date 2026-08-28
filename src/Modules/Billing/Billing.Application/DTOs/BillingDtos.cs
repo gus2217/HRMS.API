@@ -15,6 +15,16 @@ public sealed record InvoiceSummaryDto(
     decimal TotalAmount,
     DateTime CreatedAtUtc);
 
+/// <summary>List-view row with patient display identity resolved cross-schema.</summary>
+public sealed record InvoiceListItemDto(
+    Guid Id,
+    Guid PatientId,
+    string PatientNumber,
+    string PatientName,
+    string Status,
+    decimal TotalAmount,
+    DateTime CreatedAtUtc);
+
 public sealed record InvoiceDetailDto(
     Guid Id,
     Guid PatientId,

@@ -2,6 +2,7 @@ using Jacana.Pharmacy.Application.Abstractions;
 using Jacana.Pharmacy.Application.DTOs;
 using Jacana.Pharmacy.Domain;
 using Jacana.SharedKernel.Application.Abstractions;
+using Jacana.SharedKernel.Application.Common;
 using Jacana.SharedKernel.Domain;
 using MediatR;
 
@@ -76,5 +77,35 @@ public sealed class GetPrescriptionQueryHandler(IPrescriptionRepository prescrip
     {
         var detail = await prescriptions.GetDetailAsync(request.PrescriptionId, ct);
         return detail is null ? Error.NotFound("Prescription not found.") : detail;
+    }
+}
+
+public sealed class SearchPrescriptionsQueryHandler(
+    IPrescriptionRepository prescriptions,
+    IPatientIdentityLookup patients)
+    : IRequestHandler<SearchPrescriptionsQuery, Result<PagedResult<PrescriptionListItemDto>>>
+{
+    public async Task<Result<PagedResult<PrescriptionListItemDto>>> Handle(
+        SearchPrescriptionsQuery request, CancellationToken ct)
+    {
+        var items = await prescriptions.SearchAsync(
+            request.Status, request.PageNumber, request.PageSize, ct);
+        var total = await prescriptions.CountAsync(request.Status, ct);
+
+        var identities = await patients.GetIdentitiesAsync(
+            items.Select(i => i.PatientId).ToArray(), ct);
+
+        var rows = items.Select(p =>
+        {
+            identities.TryGetValue(p.PatientId, out var patient);
+            return new PrescriptionListItemDto(
+                p.Id, p.PatientId,
+                patient?.PatientNumber ?? string.Empty,
+                patient?.FullName ?? string.Empty,
+                p.PrescribedByUserId, p.Status, p.PrescribedAtUtc, p.ItemCount);
+        }).ToArray();
+
+        return Result.Success(new PagedResult<PrescriptionListItemDto>(
+            rows, total, request.PageNumber, request.PageSize));
     }
 }

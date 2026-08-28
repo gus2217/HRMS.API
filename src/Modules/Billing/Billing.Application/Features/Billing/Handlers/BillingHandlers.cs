@@ -2,6 +2,7 @@ using Jacana.Billing.Application.Abstractions;
 using Jacana.Billing.Application.DTOs;
 using Jacana.Billing.Domain;
 using Jacana.SharedKernel.Application.Abstractions;
+using Jacana.SharedKernel.Application.Common;
 using Jacana.SharedKernel.Domain;
 using MediatR;
 
@@ -179,5 +180,35 @@ public sealed class GetInvoiceQueryHandler(IInvoiceRepository invoices)
     {
         var detail = await invoices.GetDetailAsync(request.InvoiceId, ct);
         return detail is null ? Error.NotFound("Invoice not found.") : detail;
+    }
+}
+
+public sealed class SearchInvoicesQueryHandler(
+    IInvoiceRepository invoices,
+    IPatientIdentityLookup patients)
+    : IRequestHandler<SearchInvoicesQuery, Result<PagedResult<InvoiceListItemDto>>>
+{
+    public async Task<Result<PagedResult<InvoiceListItemDto>>> Handle(
+        SearchInvoicesQuery request, CancellationToken ct)
+    {
+        var items = await invoices.SearchAsync(
+            request.Status, request.PageNumber, request.PageSize, ct);
+        var total = await invoices.CountAsync(request.Status, ct);
+
+        var identities = await patients.GetIdentitiesAsync(
+            items.Select(i => i.PatientId).ToArray(), ct);
+
+        var rows = items.Select(i =>
+        {
+            identities.TryGetValue(i.PatientId, out var patient);
+            return new InvoiceListItemDto(
+                i.Id, i.PatientId,
+                patient?.PatientNumber ?? string.Empty,
+                patient?.FullName ?? string.Empty,
+                i.Status, i.TotalAmount, i.CreatedAtUtc);
+        }).ToArray();
+
+        return Result.Success(new PagedResult<InvoiceListItemDto>(
+            rows, total, request.PageNumber, request.PageSize));
     }
 }

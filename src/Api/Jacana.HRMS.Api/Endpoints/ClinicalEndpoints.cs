@@ -19,6 +19,9 @@ public static class ClinicalEndpoints
         group.MapPost("/", StartAsync)
             .RequireAuthorization(Permissions.Clinical.Consult);
 
+        group.MapGet("/", SearchAsync)
+            .RequireAuthorization(Permissions.Clinical.View);
+
         group.MapGet("/{id:guid}", GetAsync)
             .RequireAuthorization(Permissions.Clinical.View);
 
@@ -48,6 +51,13 @@ public static class ClinicalEndpoints
     {
         var result = await sender.Send(new StartConsultationCommand(request.PatientId, request.ClinicianUserId), ct);
         return result.IsSuccess ? Results.Created($"/api/v1/consultations/{result.Value.Id}", result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> SearchAsync(
+        ISender sender, CancellationToken ct, string? status = null, int pageNumber = 1, int pageSize = 20)
+    {
+        var result = await sender.Send(new SearchConsultationsQuery(pageNumber, pageSize, status), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 
     private static async Task<IResult> GetAsync(Guid id, ISender sender, CancellationToken ct)

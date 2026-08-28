@@ -27,6 +27,30 @@ public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepos
         return Task.CompletedTask;
     }
 
+    public async Task<IReadOnlyList<AdmissionSummaryDto>> SearchAsync(
+        bool activeOnly, int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query = db.Admissions.AsNoTracking();
+        if (activeOnly)
+            query = query.Where(a => a.Status != AdmissionStatus.Discharged);
+
+        return await query
+            .OrderByDescending(a => a.AdmittedAtUtc)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new AdmissionSummaryDto(
+                a.Id, a.PatientId, a.WardName, a.BedNumber, a.Status.ToString(), a.AdmittedAtUtc))
+            .ToListAsync(ct);
+    }
+
+    public Task<int> CountAsync(bool activeOnly, CancellationToken ct = default)
+    {
+        var query = db.Admissions.AsNoTracking();
+        if (activeOnly)
+            query = query.Where(a => a.Status != AdmissionStatus.Discharged);
+        return query.CountAsync(ct);
+    }
+
     public async Task<AdmissionDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default)
     {
         var a = await db.Admissions.AsNoTracking()

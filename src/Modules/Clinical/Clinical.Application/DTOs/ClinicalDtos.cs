@@ -1,5 +1,16 @@
 namespace Jacana.Clinical.Application.DTOs;
 
+/// <summary>List-view row with patient display identity resolved cross-schema.</summary>
+public sealed record ConsultationListItemDto(
+    Guid Id,
+    Guid PatientId,
+    string PatientNumber,
+    string PatientName,
+    Guid ClinicianUserId,
+    string Status,
+    DateTime StartedAtUtc,
+    DateTime? CompletedAtUtc);
+
 /// <summary>Lean read-model for list/history views.</summary>
 public sealed record ConsultationSummaryDto(
     Guid Id,

@@ -27,6 +27,33 @@ public sealed class PrescriptionRepository(PharmacyDbContext db) : IPrescription
         return Task.CompletedTask;
     }
 
+    public async Task<IReadOnlyList<PrescriptionSummaryDto>> SearchAsync(
+        string? status, int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query = db.Prescriptions.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(status)
+            && Enum.TryParse<PrescriptionStatus>(status, true, out var parsed))
+            query = query.Where(p => p.Status == parsed);
+
+        return await query
+            .OrderByDescending(p => p.PrescribedAtUtc)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => new PrescriptionSummaryDto(
+                p.Id, p.PatientId, p.PrescribedByUserId, p.Status.ToString(),
+                p.PrescribedAtUtc, p.Items.Count))
+            .ToListAsync(ct);
+    }
+
+    public Task<int> CountAsync(string? status, CancellationToken ct = default)
+    {
+        var query = db.Prescriptions.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(status)
+            && Enum.TryParse<PrescriptionStatus>(status, true, out var parsed))
+            query = query.Where(p => p.Status == parsed);
+        return query.CountAsync(ct);
+    }
+
     public async Task<PrescriptionDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default)
     {
         var p = await db.Prescriptions.AsNoTracking()

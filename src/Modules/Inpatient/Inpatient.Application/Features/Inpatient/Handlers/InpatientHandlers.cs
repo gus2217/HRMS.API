@@ -2,6 +2,7 @@ using Jacana.Inpatient.Application.Abstractions;
 using Jacana.Inpatient.Application.DTOs;
 using Jacana.Inpatient.Domain;
 using Jacana.SharedKernel.Application.Abstractions;
+using Jacana.SharedKernel.Application.Common;
 using Jacana.SharedKernel.Domain;
 using MediatR;
 
@@ -81,5 +82,35 @@ public sealed class GetWardOccupancyQueryHandler(IAdmissionRepository admissions
     {
         var occupancy = await admissions.GetWardOccupancyAsync(ct);
         return Result.Success(occupancy);
+    }
+}
+
+public sealed class SearchAdmissionsQueryHandler(
+    IAdmissionRepository admissions,
+    IPatientIdentityLookup patients)
+    : IRequestHandler<SearchAdmissionsQuery, Result<PagedResult<AdmissionListItemDto>>>
+{
+    public async Task<Result<PagedResult<AdmissionListItemDto>>> Handle(
+        SearchAdmissionsQuery request, CancellationToken ct)
+    {
+        var items = await admissions.SearchAsync(
+            request.ActiveOnly, request.PageNumber, request.PageSize, ct);
+        var total = await admissions.CountAsync(request.ActiveOnly, ct);
+
+        var identities = await patients.GetIdentitiesAsync(
+            items.Select(i => i.PatientId).ToArray(), ct);
+
+        var rows = items.Select(a =>
+        {
+            identities.TryGetValue(a.PatientId, out var patient);
+            return new AdmissionListItemDto(
+                a.Id, a.PatientId,
+                patient?.PatientNumber ?? string.Empty,
+                patient?.FullName ?? string.Empty,
+                a.WardName, a.BedNumber, a.Status, a.AdmittedAtUtc, null);
+        }).ToArray();
+
+        return Result.Success(new PagedResult<AdmissionListItemDto>(
+            rows, total, request.PageNumber, request.PageSize));
     }
 }

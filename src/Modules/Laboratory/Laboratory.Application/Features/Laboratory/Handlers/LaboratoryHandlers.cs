@@ -2,6 +2,7 @@ using Jacana.Laboratory.Application.Abstractions;
 using Jacana.Laboratory.Application.DTOs;
 using Jacana.Laboratory.Domain;
 using Jacana.SharedKernel.Application.Abstractions;
+using Jacana.SharedKernel.Application.Common;
 using Jacana.SharedKernel.Domain;
 using MediatR;
 
@@ -61,5 +62,35 @@ public sealed class GetLabOrderQueryHandler(ILabOrderRepository orders)
     {
         var detail = await orders.GetDetailAsync(request.LabOrderId, ct);
         return detail is null ? Error.NotFound("Lab order not found.") : detail;
+    }
+}
+
+public sealed class SearchLabOrdersQueryHandler(
+    ILabOrderRepository orders,
+    IPatientIdentityLookup patients)
+    : IRequestHandler<SearchLabOrdersQuery, Result<PagedResult<LabOrderListItemDto>>>
+{
+    public async Task<Result<PagedResult<LabOrderListItemDto>>> Handle(
+        SearchLabOrdersQuery request, CancellationToken ct)
+    {
+        var items = await orders.SearchAsync(
+            request.Status, request.PageNumber, request.PageSize, ct);
+        var total = await orders.CountAsync(request.Status, ct);
+
+        var identities = await patients.GetIdentitiesAsync(
+            items.Select(i => i.PatientId).ToArray(), ct);
+
+        var rows = items.Select(o =>
+        {
+            identities.TryGetValue(o.PatientId, out var patient);
+            return new LabOrderListItemDto(
+                o.Id, o.PatientId,
+                patient?.PatientNumber ?? string.Empty,
+                patient?.FullName ?? string.Empty,
+                o.OrderedByUserId, o.Status, o.OrderedAtUtc, o.TestCount);
+        }).ToArray();
+
+        return Result.Success(new PagedResult<LabOrderListItemDto>(
+            rows, total, request.PageNumber, request.PageSize));
     }
 }

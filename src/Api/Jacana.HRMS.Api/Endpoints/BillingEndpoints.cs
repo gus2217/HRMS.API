@@ -16,6 +16,9 @@ public static class BillingEndpoints
         group.MapPost("/invoices", IssueInvoiceAsync)
             .RequireAuthorization(Permissions.Billing.IssueInvoice);
 
+        group.MapGet("/invoices", SearchInvoicesAsync)
+            .RequireAuthorization(Permissions.Billing.View);
+
         group.MapGet("/invoices/{id:guid}", GetInvoiceAsync)
             .RequireAuthorization(Permissions.Billing.View);
 
@@ -41,6 +44,13 @@ public static class BillingEndpoints
             request.PatientId, request.ConsultationId, request.PrimaryPaymentMethod,
             request.Lines.Select(l => new InvoiceLineInput(l.ServiceCode, l.Description, l.Quantity, l.UnitPrice)).ToArray()), ct);
         return result.IsSuccess ? Results.Created($"/api/v1/billing/invoices/{result.Value.Id}", result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> SearchInvoicesAsync(
+        ISender sender, CancellationToken ct, string? status = null, int pageNumber = 1, int pageSize = 20)
+    {
+        var result = await sender.Send(new SearchInvoicesQuery(pageNumber, pageSize, status), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 
     private static async Task<IResult> GetInvoiceAsync(Guid id, ISender sender, CancellationToken ct)

@@ -27,6 +27,33 @@ public sealed class LabOrderRepository(LaboratoryDbContext db) : ILabOrderReposi
         return Task.CompletedTask;
     }
 
+    public async Task<IReadOnlyList<LabOrderSummaryDto>> SearchAsync(
+        string? status, int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query = db.LabOrders.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(status)
+            && Enum.TryParse<LabOrderStatus>(status, true, out var parsed))
+            query = query.Where(o => o.Status == parsed);
+
+        return await query
+            .OrderByDescending(o => o.OrderedAtUtc)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(o => new LabOrderSummaryDto(
+                o.Id, o.PatientId, o.OrderedByUserId, o.Status.ToString(),
+                o.OrderedAtUtc, o.Tests.Count))
+            .ToListAsync(ct);
+    }
+
+    public Task<int> CountAsync(string? status, CancellationToken ct = default)
+    {
+        var query = db.LabOrders.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(status)
+            && Enum.TryParse<LabOrderStatus>(status, true, out var parsed))
+            query = query.Where(o => o.Status == parsed);
+        return query.CountAsync(ct);
+    }
+
     public async Task<LabOrderDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default)
     {
         var o = await db.LabOrders.AsNoTracking()

@@ -16,6 +16,17 @@ public sealed record PrescriptionSummaryDto(
     DateTime PrescribedAtUtc,
     int ItemCount);
 
+/// <summary>List-view row with patient display identity resolved cross-schema.</summary>
+public sealed record PrescriptionListItemDto(
+    Guid Id,
+    Guid PatientId,
+    string PatientNumber,
+    string PatientName,
+    Guid PrescribedByUserId,
+    string Status,
+    DateTime PrescribedAtUtc,
+    int ItemCount);
+
 public sealed record PrescriptionDetailDto(
     Guid Id,
     Guid PatientId,

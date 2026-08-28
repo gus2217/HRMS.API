@@ -60,6 +60,33 @@ public sealed class ConsultationRepository(ClinicalDbContext db) : IConsultation
                 c.StartedAtUtc, c.CompletedAtUtc))
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<ConsultationSummaryDto>> SearchAsync(
+        string? status, int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query = db.Consultations.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(status)
+            && Enum.TryParse<ConsultationStatus>(status, true, out var parsed))
+            query = query.Where(c => c.Status == parsed);
+
+        return await query
+            .OrderByDescending(c => c.StartedAtUtc)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(c => new ConsultationSummaryDto(
+                c.Id, c.PatientId, c.ClinicianUserId, c.Status.ToString(),
+                c.StartedAtUtc, c.CompletedAtUtc))
+            .ToListAsync(ct);
+    }
+
+    public Task<int> CountAsync(string? status, CancellationToken ct = default)
+    {
+        var query = db.Consultations.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(status)
+            && Enum.TryParse<ConsultationStatus>(status, true, out var parsed))
+            query = query.Where(c => c.Status == parsed);
+        return query.CountAsync(ct);
+    }
+
     public async Task<PatientClinicalHistoryDto?> GetPatientHistoryAsync(Guid patientId, CancellationToken ct = default)
     {
         var consultations = await db.Consultations.AsNoTracking()

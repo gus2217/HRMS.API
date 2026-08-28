@@ -27,6 +27,33 @@ public sealed class InvoiceRepository(BillingDbContext db) : IInvoiceRepository
         return Task.CompletedTask;
     }
 
+    public async Task<IReadOnlyList<InvoiceSummaryDto>> SearchAsync(
+        string? status, int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query = db.Invoices.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(status)
+            && Enum.TryParse<InvoiceStatus>(status, true, out var parsed))
+            query = query.Where(i => i.Status == parsed);
+
+        return await query
+            .OrderByDescending(i => i.CreatedAtUtc)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(i => new InvoiceSummaryDto(
+                i.Id, i.PatientId, i.Status.ToString(),
+                i.Lines.Sum(l => l.UnitPrice.Amount * l.Quantity), i.CreatedAtUtc))
+            .ToListAsync(ct);
+    }
+
+    public Task<int> CountAsync(string? status, CancellationToken ct = default)
+    {
+        var query = db.Invoices.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(status)
+            && Enum.TryParse<InvoiceStatus>(status, true, out var parsed))
+            query = query.Where(i => i.Status == parsed);
+        return query.CountAsync(ct);
+    }
+
     public async Task<InvoiceDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default)
     {
         var i = await db.Invoices.AsNoTracking()

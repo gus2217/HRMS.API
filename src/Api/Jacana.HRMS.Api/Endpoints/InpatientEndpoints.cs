@@ -16,6 +16,9 @@ public static class InpatientEndpoints
         group.MapPost("/admissions", AdmitAsync)
             .RequireAuthorization(Permissions.Clinical.Consult);
 
+        group.MapGet("/admissions", SearchAdmissionsAsync)
+            .RequireAuthorization(Permissions.Clinical.View);
+
         group.MapGet("/admissions/{id:guid}", GetAdmissionAsync)
             .RequireAuthorization(Permissions.Clinical.View);
 
@@ -37,6 +40,13 @@ public static class InpatientEndpoints
         var result = await sender.Send(new AdmitPatientCommand(
             request.PatientId, request.AdmittingClinicianUserId, request.WardName, request.BedNumber), ct);
         return result.IsSuccess ? Results.Created($"/api/v1/inpatient/admissions/{result.Value.Id}", result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> SearchAdmissionsAsync(
+        ISender sender, CancellationToken ct, bool activeOnly = true, int pageNumber = 1, int pageSize = 20)
+    {
+        var result = await sender.Send(new SearchAdmissionsQuery(pageNumber, pageSize, activeOnly), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 
     private static async Task<IResult> GetAdmissionAsync(Guid id, ISender sender, CancellationToken ct)

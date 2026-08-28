@@ -34,6 +34,7 @@ using Jacana.SharedKernel.Application.Behaviors;
 using Jacana.SharedKernel.Infrastructure.Caching;
 using Jacana.SharedKernel.Infrastructure.Identity;
 using Jacana.SharedKernel.Infrastructure.Outbox;
+using Jacana.SharedKernel.Infrastructure.Services;
 using Jacana.SharedKernel.Infrastructure.Time;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
@@ -72,6 +73,8 @@ builder.Services.AddOpenTelemetry()
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, CurrentUserService>();
+builder.Services.AddSingleton<IPatientIdentityLookup>(_ =>
+    new PatientIdentityLookup(connectionString));
 builder.Services.AddSingleton<IValueEncryptor>(_ =>
     new Jacana.SharedKernel.Infrastructure.Security.AesGcmValueEncryptor(
         builder.Configuration["Security:EncryptionKey"]

@@ -9,6 +9,9 @@ public interface IInvoiceRepository
     Task AddAsync(Invoice invoice, CancellationToken ct = default);
     Task UpdateAsync(Invoice invoice, CancellationToken ct = default);
     Task<InvoiceDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<InvoiceSummaryDto>> SearchAsync(
+        string? status, int pageNumber, int pageSize, CancellationToken ct = default);
+    Task<int> CountAsync(string? status, CancellationToken ct = default);
 }
 
 public interface IPaymentRepository
