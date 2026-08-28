@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Jacana.HRMS.Api.Auth;
@@ -138,6 +139,8 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddHangfire(config =>
     config.UsePostgreSqlStorage(o => o.UseNpgsqlConnection(connectionString)));
 builder.Services.AddHangfireServer();
+// OutboxDispatcher reads the shared outbox table via its own minimal DbContext.
+builder.Services.AddDbContext<OutboxDbContext>(o => o.UseNpgsql(connectionString));
 builder.Services.AddScoped<OutboxDispatcher>();
 
 // ── Minimal API ────────────────────────────────────────────────────────────────
