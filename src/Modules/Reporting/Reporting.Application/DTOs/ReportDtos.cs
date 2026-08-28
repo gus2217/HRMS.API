@@ -1,8 +1,8 @@
 namespace Jacana.Reporting.Application.DTOs;
 
-/// <summary>Patient registrations grouped by calendar day.</summary>
+/// <summary>Patient registrations grouped by calendar day (date rendered as yyyy-MM-dd).</summary>
 public sealed record DailyRegistrationsReportDto(
-    DateOnly Date,
+    string Date,
     int Registrations);
 
 /// <summary>Revenue grouped by service code.</summary>

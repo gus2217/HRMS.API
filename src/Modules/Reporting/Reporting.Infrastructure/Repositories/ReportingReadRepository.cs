@@ -15,15 +15,19 @@ public sealed class ReportingReadRepository(string connectionString) : IReportin
         DateOnly from, DateOnly to, CancellationToken ct = default)
     {
         await using var conn = new NpgsqlConnection(connectionString);
+        // Dapper's bundled type handlers predate DateOnly — pass yyyy-MM-dd strings
+        // and cast in SQL instead of binding DateOnly parameters.
         return (await conn.QueryAsync<DailyRegistrationsReportDto>(new CommandDefinition(
             """
-            SELECT CAST("CreatedAtUtc" AS date) AS "Date", COUNT(*) AS "Registrations"
+            SELECT TO_CHAR(CAST("CreatedAtUtc" AS date), 'YYYY-MM-DD') AS "Date",
+                   CAST(COUNT(*) AS integer) AS "Registrations"
             FROM patient.patients
-            WHERE CAST("CreatedAtUtc" AS date) BETWEEN @from AND @to
-            GROUP BY CAST("CreatedAtUtc" AS date)
+            WHERE CAST("CreatedAtUtc" AS date) BETWEEN CAST(@from AS date) AND CAST(@to AS date)
+            GROUP BY TO_CHAR(CAST("CreatedAtUtc" AS date), 'YYYY-MM-DD')
             ORDER BY 1
             """,
-            new { from, to }, cancellationToken: ct))).ToList();
+            new { from = from.ToString("yyyy-MM-dd"), to = to.ToString("yyyy-MM-dd") },
+            cancellationToken: ct))).ToList();
     }
 
     public async Task<IReadOnlyList<RevenueByServiceReportDto>> RevenueByServiceAsync(CancellationToken ct = default)
@@ -47,7 +51,7 @@ public sealed class ReportingReadRepository(string connectionString) : IReportin
         return (await conn.QueryAsync<StockLevelReportDto>(new CommandDefinition(
             """
             SELECT d."Id" AS "DrugId", d."Code" AS "DrugCode", d."Name" AS "DrugName",
-                   COALESCE(SUM(b."QuantityOnHand"), 0) AS "QuantityOnHand"
+                   CAST(COALESCE(SUM(b."QuantityOnHand"), 0) AS integer) AS "QuantityOnHand"
             FROM inventory.drugs d
             LEFT JOIN inventory.stock_batches b ON b."DrugId" = d."Id" AND b."QuantityOnHand" > 0
             WHERE d."IsDeleted" = false
@@ -62,8 +66,8 @@ public sealed class ReportingReadRepository(string connectionString) : IReportin
         await using var conn = new NpgsqlConnection(connectionString);
         return (await conn.QueryAsync<ShaClaimStatusReportDto>(new CommandDefinition(
             """
-            SELECT c."Status", COUNT(*) AS "ClaimCount",
-                   COALESCE(SUM(l."UnitPrice" * l."Quantity"), 0) AS "TotalAmount"
+            SELECT c."Status", CAST(COUNT(*) AS integer) AS "ClaimCount",
+                   CAST(COALESCE(SUM(l."UnitPrice" * l."Quantity"), 0) AS numeric(18,2)) AS "TotalAmount"
             FROM billing.sha_claims c
             INNER JOIN billing.invoices i ON i."Id" = c."InvoiceId"
             INNER JOIN billing.invoice_lines l ON l."InvoiceId" = i."Id"
@@ -78,7 +82,7 @@ public sealed class ReportingReadRepository(string connectionString) : IReportin
         await using var conn = new NpgsqlConnection(connectionString);
         return (await conn.QueryAsync<ClinicianWorkloadDto>(new CommandDefinition(
             """
-            SELECT "ClinicianUserId", COUNT(*) AS "ConsultationCount"
+            SELECT "ClinicianUserId", CAST(COUNT(*) AS integer) AS "ConsultationCount"
             FROM clinical.consultations
             WHERE "IsDeleted" = false
             GROUP BY "ClinicianUserId"

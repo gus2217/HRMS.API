@@ -132,6 +132,7 @@ static async Task SeedIdentityAsync(string cs, string password)
         ("Patient.Register", "Register patients"),
         ("Patient.View", "View patients"),
         ("Patient.Update", "Update patient records"),
+        ("Patient.ConfidentialView", "View confidential patient data (phone, SHA, address, next of kin)"),
         ("Billing.IssueInvoice", "Issue invoices"),
         ("Billing.RecordPayment", "Record payments"),
         ("Billing.View", "View billing data"),
@@ -169,16 +170,18 @@ static async Task SeedIdentityAsync(string cs, string password)
         [nameof(SystemRole.Doctor)] = new[]
         {
             "Clinical.Consult", "Clinical.RecordDiagnosis", "Clinical.View",
-            "Patient.View", "Patient.Register", "Laboratory.Order", "Pharmacy.Dispense",
+            "Patient.View", "Patient.Register", "Patient.ConfidentialView",
+            "Laboratory.Order", "Pharmacy.Dispense",
         },
         [nameof(SystemRole.Nurse)] = new[]
         {
             "Patient.View", "Patient.Register", "Clinical.View", "Laboratory.Order",
+            "Patient.ConfidentialView", // triage/notes need contact + NOK context
             "Clinical.Consult", // triage, begin phase, clinical notes
         },
         [nameof(SystemRole.Receptionist)] = new[]
         {
-            "Patient.Register", "Patient.View", "Patient.Update",
+            "Patient.Register", "Patient.View", "Patient.Update", "Patient.ConfidentialView",
             "Billing.IssueInvoice", "Billing.View",
         },
         [nameof(SystemRole.LabTechnician)] = new[]
@@ -192,7 +195,7 @@ static async Task SeedIdentityAsync(string cs, string password)
             "Billing.IssueInvoice", "Billing.RecordPayment", "Billing.View",
         },
         [nameof(SystemRole.Cashier)] = new[] { "Billing.RecordPayment", "Billing.View" },
-        [nameof(SystemRole.RecordsOfficer)] = new[] { "Patient.View", "Patient.Update" },
+        [nameof(SystemRole.RecordsOfficer)] = new[] { "Patient.View", "Patient.Update", "Patient.ConfidentialView" },
         [nameof(SystemRole.ITSupport)] = new[]
         {
             "Identity.User.View", "Identity.User.Register",

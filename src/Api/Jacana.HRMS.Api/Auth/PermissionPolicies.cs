@@ -28,7 +28,7 @@ public static class PermissionPolicies
     [
         Permissions.Users.View, Permissions.Users.Register, Permissions.Users.AssignRole, Permissions.Users.Suspend,
         Permissions.Roles.View, Permissions.Roles.Manage,
-        Permissions.Patients.Register, Permissions.Patients.View, Permissions.Patients.Update,
+        Permissions.Patients.Register, Permissions.Patients.View, Permissions.Patients.Update, Permissions.Patients.ConfidentialView,
         Permissions.Billing.IssueInvoice, Permissions.Billing.RecordPayment, Permissions.Billing.View,
         Permissions.Clinical.Consult, Permissions.Clinical.RecordDiagnosis, Permissions.Clinical.View,
         Permissions.Lab.Order, Permissions.Lab.RecordResult,

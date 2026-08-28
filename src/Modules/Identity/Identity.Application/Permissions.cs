@@ -25,6 +25,13 @@ public static class Permissions
         public const string Register = "Patient.Register";
         public const string View = "Patient.View";
         public const string Update = "Patient.Update";
+
+        /// <summary>
+        /// Grants access to confidential patient data (phone, SHA number, address,
+        /// next-of-kin details). Roles that only need to identify a patient
+        /// (e.g. Lab Technician, Pharmacist) hold Patient.View without this.
+        /// </summary>
+        public const string ConfidentialView = "Patient.ConfidentialView";
     }
 
     public static class Billing
