@@ -34,24 +34,24 @@ pg_ready() {
   fi
 }
 
-# ── 1. Infrastructure (Postgres + Redis) — Docker OR local ──────────────
+# ── 1. Infrastructure (Redis via Docker; Postgres is EXTERNAL) ──────────
 say "Checking database ($DB_HOST:$DB_PORT/$DB_NAME)"
 if pg_ready; then
-  ok "Postgres already reachable at $DB_HOST:$DB_PORT — skipping Docker"
+  ok "Postgres reachable at $DB_HOST:$DB_PORT — external server"
 else
   if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-    say "Starting Postgres + Redis via Docker"
-    docker compose up -d postgres redis
-    for i in $(seq 1 20); do
-      pg_ready && { ok "Postgres ready"; break; }
-      [ "$i" = 20 ] && fail "Postgres did not become ready"
-      sleep 2
-    done
+    say "Starting Redis via Docker"
+    docker compose up -d redis
   else
-    fail "No Postgres reachable at $DB_HOST:$DB_PORT and Docker is not available.
-    Start your local Postgres (must have DB '$DB_NAME', user '$DB_USER') or
-    set DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASS, then re-run."
+    echo "    Docker not available — skipping Redis container (assume Redis is already running)"
   fi
+  say "Waiting for external Postgres at $DB_HOST:$DB_PORT…"
+  for i in $(seq 1 20); do
+    pg_ready && { ok "Postgres ready"; break; }
+    [ "$i" = 20 ] && fail "No Postgres reachable at $DB_HOST:$DB_PORT.
+    Point DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASS at your external server, then re-run."
+    sleep 2
+  done
 fi
 
 # ── 2. Seed (idempotent — safe to run every time) ───────────────────────

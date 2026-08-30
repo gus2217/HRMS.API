@@ -123,7 +123,7 @@ Jacana.HRMS.sln
 │   ├── UnitTests/                        # 54 tests across all modules
 │   └── ArchitectureTests/                # 20 layer/dependency rules
 ├── tools/Jacana.HRMS.DbInitializer/      # migrate-all + seed console tool
-├── docker-compose.yml                    # Postgres 16 + Redis 7 + OTel
+├── docker-compose.yml                    # Redis 7 + OTel (Postgres is external)
 └── otel-collector-config.yaml
 ```
 
@@ -157,23 +157,27 @@ Module/
 ### Prerequisites
 
 - .NET 8 SDK
-- Docker (for Postgres/Redis) **or** a local PostgreSQL 16 instance
+- An external PostgreSQL server (host/port/creds via `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASS`)
 - Redis 7 (or the Docker container)
 
 ### Infrastructure (Docker)
 
+Postgres is **not** part of the Docker stack — it runs on an external server.
+Redis + the OTel collector run in containers:
+
 ```bash
-docker compose up -d          # postgres:16 + redis:7 + otel-collector
+docker compose up -d          # redis:7 + otel-collector
 ```
 
-Connection defaults (override in `.env`):
+Connection defaults (override in `.env` or via `DB_*` env vars):
 
 | Setting | Default |
 |---|---|
-| `POSTGRES_DB` | `jacana_hrms` |
-| `POSTGRES_USER` | `jacana` |
-| `POSTGRES_PASSWORD` | `jacana` |
-| Port | `5432` |
+| `DB_HOST` | `localhost` |
+| `DB_NAME` | `jacana_hrms` |
+| `DB_USER` | `jacana` |
+| `DB_PASS` | `jacana` |
+| `DB_PORT` | `5432` |
 
 ### Run the API
 
