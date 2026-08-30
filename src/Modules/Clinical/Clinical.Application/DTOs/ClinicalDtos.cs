@@ -94,3 +94,23 @@ public sealed record PatientClinicalHistoryDto(
     IReadOnlyList<ConsultationSummaryDto> Consultations,
     IReadOnlyList<DiagnosisDto> Diagnoses,
     IReadOnlyList<ClinicalNoteDto> Notes);
+
+/// <summary>
+/// Full per-visit medical record for clinicians (Clinical.View). Each consultation
+/// carries its triage, diagnoses, dated notes, structured documentation and
+/// referrals so a doctor/nurse can follow the care timeline in one view.
+/// </summary>
+public sealed record PatientMedicalRecordDto(
+    Guid PatientId,
+    IReadOnlyList<ConsultationRecordDto> Consultations);
+
+public sealed record ConsultationRecordDto(
+    Guid Id,
+    string Status,
+    DateTime StartedAtUtc,
+    DateTime? CompletedAtUtc,
+    TriageDataDto? Triage,
+    IReadOnlyList<DiagnosisDto> Diagnoses,
+    IReadOnlyList<ClinicalNoteDto> Notes,
+    ClinicalDocumentationDto? Documentation,
+    IReadOnlyList<ReferralDto> Referrals);

@@ -50,6 +50,9 @@ public static class ClinicalEndpoints
         app.MapGet("/api/v1/patients/{patientId:guid}/clinical-history", GetHistoryAsync)
             .RequireAuthorization(Permissions.Clinical.View);
 
+        app.MapGet("/api/v1/patients/{patientId:guid}/medical-record", GetMedicalRecordAsync)
+            .RequireAuthorization(Permissions.Clinical.View);
+
         return app;
     }
 
@@ -143,6 +146,12 @@ public static class ClinicalEndpoints
     private static async Task<IResult> GetHistoryAsync(Guid patientId, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new GetPatientHistoryQuery(patientId), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> GetMedicalRecordAsync(Guid patientId, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new GetPatientMedicalRecordQuery(patientId), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

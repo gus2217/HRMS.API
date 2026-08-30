@@ -13,3 +13,6 @@ public sealed record SearchConsultationsQuery(int PageNumber, int PageSize, stri
 
 public sealed record GetPatientHistoryQuery(Guid PatientId)
     : IQuery<Result<PatientClinicalHistoryDto>>;
+
+public sealed record GetPatientMedicalRecordQuery(Guid PatientId)
+    : IQuery<Result<PatientMedicalRecordDto>>;

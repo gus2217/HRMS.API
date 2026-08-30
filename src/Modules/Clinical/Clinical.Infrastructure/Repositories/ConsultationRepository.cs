@@ -162,4 +162,69 @@ public sealed class ConsultationRepository(ClinicalDbContext db) : IConsultation
 
         return new PatientClinicalHistoryDto(patientId, summaries, diagnoses, notes);
     }
+
+    /// <summary>
+    /// Full per-visit medical record for clinicians: every consultation with its
+    /// triage, diagnoses, dated notes, structured documentation and referrals,
+    /// newest first. Lab orders/prescriptions are resolved by the frontend via the
+    /// by-consultation endpoints (also Clinical.View-gated).
+    /// </summary>
+    public async Task<PatientMedicalRecordDto?> GetMedicalRecordAsync(Guid patientId, CancellationToken ct = default)
+    {
+        var consultations = await db.Consultations.AsNoTracking()
+            .Include(c => c.Diagnoses)
+            .Include(c => c.Notes)
+            .Include(c => c.Referrals)
+            .Include(c => c.Documentation)
+            .Where(c => c.PatientId == patientId)
+            .OrderByDescending(c => c.StartedAtUtc)
+            .ToListAsync(ct);
+
+        if (consultations.Count == 0) return null;
+
+        var records = consultations.Select(c => new ConsultationRecordDto(
+            c.Id, c.Status.ToString(), c.StartedAtUtc, c.CompletedAtUtc,
+            c.Triage is null ? null : new TriageDataDto(
+                c.Triage.TemperatureCelsius, c.Triage.BloodPressure, c.Triage.PulseRate,
+                c.Triage.RespiratoryRate, c.Triage.WeightKg),
+            c.Diagnoses.Select(d => new DiagnosisDto(d.IcdCode, d.Description, d.IsPrimary)).ToArray(),
+            c.Notes.Select(n => new ClinicalNoteDto(n.Content, n.AuthorUserId, n.RecordedAtUtc)).ToArray(),
+            c.Documentation is null ? null : new ClinicalDocumentationDto(
+                c.Documentation.ChiefComplaint,
+                c.Documentation.HistoryOfPresentingIllness,
+                c.Documentation.PastMedicalHistory,
+                c.Documentation.PastSurgicalHistory,
+                c.Documentation.FamilyHistory,
+                c.Documentation.SocialHistory,
+                c.Documentation.GynaecologicalHistory,
+                c.Documentation.ObstetricHistory,
+                c.Documentation.DrugHistory,
+                c.Documentation.RosGeneral,
+                c.Documentation.RosCardiovascular,
+                c.Documentation.RosRespiratory,
+                c.Documentation.RosGastrointestinal,
+                c.Documentation.RosGenitourinary,
+                c.Documentation.RosMusculoskeletal,
+                c.Documentation.RosNeurological,
+                c.Documentation.RosDermatological,
+                c.Documentation.RosEntEyes,
+                c.Documentation.RosEndocrine,
+                c.Documentation.ExamGeneralAppearance,
+                c.Documentation.ExamHeadAndNeck,
+                c.Documentation.ExamCardiovascular,
+                c.Documentation.ExamRespiratory,
+                c.Documentation.ExamAbdominal,
+                c.Documentation.ExamGenitourinary,
+                c.Documentation.ExamMusculoskeletal,
+                c.Documentation.ExamNeurological,
+                c.Documentation.ExamSkin,
+                c.Documentation.ExamLymphatic,
+                c.Documentation.LastSavedAtUtc,
+                c.Documentation.LastSavedByUserId),
+            c.Referrals.Select(r => new ReferralDto(
+                r.Id, r.ReferredToFacility, r.ReferredToUnit, r.Reason,
+                r.Priority.ToString(), r.Status.ToString(), r.Notes, r.ReferredAtUtc)).ToArray())).ToArray();
+
+        return new PatientMedicalRecordDto(patientId, records);
+    }
 }

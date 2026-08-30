@@ -27,6 +27,16 @@ public sealed class GetPatientHistoryQueryHandler(IConsultationRepository consul
     }
 }
 
+public sealed class GetPatientMedicalRecordQueryHandler(IConsultationRepository consultations)
+    : IRequestHandler<GetPatientMedicalRecordQuery, Result<PatientMedicalRecordDto>>
+{
+    public async Task<Result<PatientMedicalRecordDto>> Handle(GetPatientMedicalRecordQuery request, CancellationToken ct)
+    {
+        var record = await consultations.GetMedicalRecordAsync(request.PatientId, ct);
+        return record is null ? Error.NotFound("No medical record found for this patient.") : record;
+    }
+}
+
 public sealed class SearchConsultationsQueryHandler(
     IConsultationRepository consultations,
     IPatientIdentityLookup patients)
