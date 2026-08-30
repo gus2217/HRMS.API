@@ -12,6 +12,8 @@ public sealed class Consultation : AggregateRoot<Guid>
     private readonly List<ClinicalNote> _notes = new();
     private readonly List<LabOrderReference> _labOrders = new();
     private readonly List<PrescriptionOrder> _prescriptionOrders = new();
+    private readonly List<Referral> _referrals = new();
+    private ClinicalDocumentation? _documentation;
 
     private Consultation() { } // EF
 
@@ -37,6 +39,8 @@ public sealed class Consultation : AggregateRoot<Guid>
     public IReadOnlyCollection<ClinicalNote> Notes => _notes.AsReadOnly();
     public IReadOnlyCollection<LabOrderReference> LabOrders => _labOrders.AsReadOnly();
     public IReadOnlyCollection<PrescriptionOrder> PrescriptionOrders => _prescriptionOrders.AsReadOnly();
+    public IReadOnlyCollection<Referral> Referrals => _referrals.AsReadOnly();
+    public ClinicalDocumentation? Documentation => _documentation;
 
     /// <summary>Legal forward transitions in the 7-step workflow.</summary>
     private static readonly IReadOnlyDictionary<ConsultationStatus, ConsultationStatus[]> Transitions =
@@ -112,6 +116,42 @@ public sealed class Consultation : AggregateRoot<Guid>
         var note = ClinicalNote.Create(content, authorUserId, recordedAtUtc);
         if (note.IsFailure) return note.Error;
         _notes.Add(note.Value);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Upserts the structured clinical documentation (CC/HPI/PMSHX/ROS/Exam).
+    /// Idempotent — safe for autosave: creates the document on first save,
+    /// updates it thereafter. Does not change the consultation status.
+    /// </summary>
+    public Result SaveDocumentation(ClinicalDocumentationData data, Guid authorUserId, DateTime savedAtUtc)
+    {
+        if (Status == ConsultationStatus.Completed)
+            return Error.InvalidOperation("Cannot edit documentation on a completed consultation.");
+
+        _documentation ??= ClinicalDocumentation.Create(Id, data);
+        _documentation.Update(data);
+        _documentation.MarkSaved(authorUserId, savedAtUtc);
+        return Result.Success();
+    }
+
+    public Result AddReferral(
+        string referredToFacility,
+        string? referredToUnit,
+        string reason,
+        ReferralPriority priority,
+        string? notes,
+        Guid referredByUserId,
+        DateTime referredAtUtc)
+    {
+        if (Status == ConsultationStatus.Completed)
+            return Error.InvalidOperation("Cannot add a referral to a completed consultation.");
+
+        var referral = Referral.Create(
+            Id, referredToFacility, referredToUnit, reason, priority, notes,
+            referredByUserId, referredAtUtc);
+        if (referral.IsFailure) return referral.Error;
+        _referrals.Add(referral.Value);
         return Result.Success();
     }
 

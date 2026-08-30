@@ -28,11 +28,13 @@ public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepos
     }
 
     public async Task<IReadOnlyList<AdmissionSummaryDto>> SearchAsync(
-        bool activeOnly, int pageNumber, int pageSize, CancellationToken ct = default)
+        bool activeOnly, Guid? patientId, int pageNumber, int pageSize, CancellationToken ct = default)
     {
         var query = db.Admissions.AsNoTracking();
         if (activeOnly)
             query = query.Where(a => a.Status != AdmissionStatus.Discharged);
+        if (patientId.HasValue)
+            query = query.Where(a => a.PatientId == patientId.Value);
 
         return await query
             .OrderByDescending(a => a.AdmittedAtUtc)
@@ -43,11 +45,13 @@ public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepos
             .ToListAsync(ct);
     }
 
-    public Task<int> CountAsync(bool activeOnly, CancellationToken ct = default)
+    public Task<int> CountAsync(bool activeOnly, Guid? patientId, CancellationToken ct = default)
     {
         var query = db.Admissions.AsNoTracking();
         if (activeOnly)
             query = query.Where(a => a.Status != AdmissionStatus.Discharged);
+        if (patientId.HasValue)
+            query = query.Where(a => a.PatientId == patientId.Value);
         return query.CountAsync(ct);
     }
 

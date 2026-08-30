@@ -14,6 +14,8 @@ public sealed class ClinicalDbContext : DbContext
     public ClinicalDbContext(DbContextOptions<ClinicalDbContext> options) : base(options) { }
 
     public DbSet<Consultation> Consultations => Set<Consultation>();
+    public DbSet<ClinicalDocumentation> ClinicalDocumentations => Set<ClinicalDocumentation>();
+    public DbSet<Referral> Referrals => Set<Referral>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 

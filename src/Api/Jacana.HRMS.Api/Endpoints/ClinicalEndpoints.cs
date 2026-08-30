@@ -1,5 +1,6 @@
 using Jacana.Clinical.Application.DTOs;
 using Jacana.Clinical.Application.Features.Consultations;
+using Jacana.Clinical.Domain;
 using Jacana.Identity.Application;
 using Jacana.SharedKernel.Domain;
 using MediatR;
@@ -35,6 +36,12 @@ public static class ClinicalEndpoints
             .RequireAuthorization(Permissions.Clinical.RecordDiagnosis);
 
         group.MapPost("/{id:guid}/notes", AddClinicalNoteAsync)
+            .RequireAuthorization(Permissions.Clinical.Consult);
+
+        group.MapPut("/{id:guid}/documentation", SaveDocumentationAsync)
+            .RequireAuthorization(Permissions.Clinical.Consult);
+
+        group.MapPost("/{id:guid}/referrals", CreateReferralAsync)
             .RequireAuthorization(Permissions.Clinical.Consult);
 
         group.MapPost("/{id:guid}/complete", CompleteAsync)
@@ -93,6 +100,37 @@ public static class ClinicalEndpoints
         Guid id, AddClinicalNoteRequestDto request, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new AddClinicalNoteCommand(id, request.Content), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> SaveDocumentationAsync(
+        Guid id, SaveDocumentationRequestDto request, ISender sender, CancellationToken ct)
+    {
+        var data = new ClinicalDocumentationDataInput(
+            request.ChiefComplaint, request.HistoryOfPresentingIllness,
+            request.PastMedicalHistory, request.PastSurgicalHistory,
+            request.FamilyHistory, request.SocialHistory,
+            request.GynaecologicalHistory, request.ObstetricHistory, request.DrugHistory,
+            request.RosGeneral, request.RosCardiovascular, request.RosRespiratory,
+            request.RosGastrointestinal, request.RosGenitourinary, request.RosMusculoskeletal,
+            request.RosNeurological, request.RosDermatological, request.RosEntEyes, request.RosEndocrine,
+            request.ExamGeneralAppearance, request.ExamHeadAndNeck, request.ExamCardiovascular,
+            request.ExamRespiratory, request.ExamAbdominal, request.ExamGenitourinary,
+            request.ExamMusculoskeletal, request.ExamNeurological, request.ExamSkin, request.ExamLymphatic);
+
+        var result = await sender.Send(new SaveDocumentationCommand(id, data), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> CreateReferralAsync(
+        Guid id, CreateReferralRequestDto request, ISender sender, CancellationToken ct)
+    {
+        if (!Enum.TryParse<ReferralPriority>(request.Priority, ignoreCase: true, out var priority))
+            return Results.BadRequest(new { error = "Referral priority is invalid." });
+
+        var result = await sender.Send(new CreateReferralCommand(
+            id, request.ReferredToFacility, request.ReferredToUnit,
+            request.Reason, priority, request.Notes), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

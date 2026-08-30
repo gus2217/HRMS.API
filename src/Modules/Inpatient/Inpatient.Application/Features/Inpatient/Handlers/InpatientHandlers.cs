@@ -94,8 +94,8 @@ public sealed class SearchAdmissionsQueryHandler(
         SearchAdmissionsQuery request, CancellationToken ct)
     {
         var items = await admissions.SearchAsync(
-            request.ActiveOnly, request.PageNumber, request.PageSize, ct);
-        var total = await admissions.CountAsync(request.ActiveOnly, ct);
+            request.ActiveOnly, request.PatientId, request.PageNumber, request.PageSize, ct);
+        var total = await admissions.CountAsync(request.ActiveOnly, request.PatientId, ct);
 
         var identities = await patients.GetIdentitiesAsync(
             items.Select(i => i.PatientId).ToArray(), ct);

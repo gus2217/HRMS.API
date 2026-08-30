@@ -43,9 +43,9 @@ public static class InpatientEndpoints
     }
 
     private static async Task<IResult> SearchAdmissionsAsync(
-        ISender sender, CancellationToken ct, bool activeOnly = true, int pageNumber = 1, int pageSize = 20)
+        ISender sender, CancellationToken ct, bool activeOnly = true, Guid? patientId = null, int pageNumber = 1, int pageSize = 20)
     {
-        var result = await sender.Send(new SearchAdmissionsQuery(pageNumber, pageSize, activeOnly), ct);
+        var result = await sender.Send(new SearchAdmissionsQuery(pageNumber, pageSize, activeOnly, patientId), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

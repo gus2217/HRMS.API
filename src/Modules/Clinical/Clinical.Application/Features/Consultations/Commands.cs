@@ -35,11 +35,57 @@ public sealed record AddClinicalNoteCommand(
     string Content)
     : ICommand<Result<ConsultationDetailDto>>;
 
+public sealed record SaveDocumentationCommand(
+    Guid ConsultationId,
+    ClinicalDocumentationDataInput Data)
+    : ICommand<Result<ConsultationDetailDto>>;
+
+public sealed record CreateReferralCommand(
+    Guid ConsultationId,
+    string ReferredToFacility,
+    string? ReferredToUnit,
+    string Reason,
+    Domain.ReferralPriority Priority,
+    string? Notes)
+    : ICommand<Result<ConsultationDetailDto>>;
+
 public sealed record AttachLabOrderCommand(
     Guid ConsultationId,
     Guid LabOrderId,
     string StatusSnapshot)
     : ICommand<Result<ConsultationDetailDto>>;
+
+/// <summary>Section values for the structured clinical document (all optional).</summary>
+public sealed record ClinicalDocumentationDataInput(
+    string? ChiefComplaint,
+    string? HistoryOfPresentingIllness,
+    string? PastMedicalHistory,
+    string? PastSurgicalHistory,
+    string? FamilyHistory,
+    string? SocialHistory,
+    string? GynaecologicalHistory,
+    string? ObstetricHistory,
+    string? DrugHistory,
+    string? RosGeneral,
+    string? RosCardiovascular,
+    string? RosRespiratory,
+    string? RosGastrointestinal,
+    string? RosGenitourinary,
+    string? RosMusculoskeletal,
+    string? RosNeurological,
+    string? RosDermatological,
+    string? RosEntEyes,
+    string? RosEndocrine,
+    string? ExamGeneralAppearance,
+    string? ExamHeadAndNeck,
+    string? ExamCardiovascular,
+    string? ExamRespiratory,
+    string? ExamAbdominal,
+    string? ExamGenitourinary,
+    string? ExamMusculoskeletal,
+    string? ExamNeurological,
+    string? ExamSkin,
+    string? ExamLymphatic);
 
 public sealed record CompleteConsultationCommand(
     Guid ConsultationId)
