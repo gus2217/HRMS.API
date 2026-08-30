@@ -30,8 +30,8 @@ public class PatientTests
         var address = Address.Create("Nairobi").Value;
         return Patient.Register(
             Guid.NewGuid(), FacilityId.New(), "PT-000001", "Jane", "Doe",
-            new DateOnly(1990, 5, 12), Gender.Female, MaritalStatus.Single,
-            phone, address).Value;
+            new DateOnly(1990, 5, 12), Gender.Female, phone, address,
+            InsuranceType.Sha, "SHA-12345", ClinicType.GeneralOutpatient).Value;
     }
 
     [Fact]
@@ -41,9 +41,38 @@ public class PatientTests
         var address = Address.Create("Nairobi").Value;
 
         Assert.True(Patient.Register(Guid.NewGuid(), FacilityId.New(), "PT-1", "", "Doe",
-            new DateOnly(1990, 1, 1), Gender.Female, MaritalStatus.Single, phone, address).IsFailure);
+            new DateOnly(1990, 1, 1), Gender.Female, phone, address,
+            InsuranceType.Sha, "SHA-1", ClinicType.GeneralOutpatient).IsFailure);
         Assert.True(Patient.Register(Guid.NewGuid(), FacilityId.New(), "PT-1", "Jane", "",
-            new DateOnly(1990, 1, 1), Gender.Female, MaritalStatus.Single, phone, address).IsFailure);
+            new DateOnly(1990, 1, 1), Gender.Female, phone, address,
+            InsuranceType.Sha, "SHA-1", ClinicType.GeneralOutpatient).IsFailure);
+    }
+
+    [Fact]
+    public void Register_requires_insurance_number_when_insured()
+    {
+        var phone = PhoneNumber.Create("+254712345678").Value;
+        var address = Address.Create("Nairobi").Value;
+
+        // SHA/Other insurers require a number.
+        Assert.True(Patient.Register(Guid.NewGuid(), FacilityId.New(), "PT-1", "Jane", "Doe",
+            new DateOnly(1990, 1, 1), Gender.Female, phone, address,
+            InsuranceType.Sha, null, ClinicType.GeneralOutpatient).IsFailure);
+        Assert.True(Patient.Register(Guid.NewGuid(), FacilityId.New(), "PT-1", "Jane", "Doe",
+            new DateOnly(1990, 1, 1), Gender.Female, phone, address,
+            InsuranceType.Other, null, ClinicType.Laboratory).IsFailure);
+
+        // Private (self-pay) patients do not need one.
+        Assert.True(Patient.Register(Guid.NewGuid(), FacilityId.New(), "PT-1", "Jane", "Doe",
+            new DateOnly(1990, 1, 1), Gender.Female, phone, address,
+            InsuranceType.Private, null, ClinicType.Wellness).IsSuccess);
+    }
+
+    [Fact]
+    public void Register_sets_marital_status_to_unknown()
+    {
+        var patient = CreatePatient();
+        Assert.Equal(MaritalStatus.Unknown, patient.MaritalStatus);
     }
 
     [Fact]

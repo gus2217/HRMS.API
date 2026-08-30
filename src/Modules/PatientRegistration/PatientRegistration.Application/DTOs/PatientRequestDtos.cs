@@ -10,17 +10,15 @@ public sealed record RegisterPatientRequestDto(
     string LastName,
     DateOnly DateOfBirth,
     Gender Gender,
-    MaritalStatus MaritalStatus,
     string Phone,
     string? NationalId,
-    string? ShaNumber,
+    InsuranceType InsuranceType,
+    string? InsuranceNumber,
+    ClinicType ClinicType,
     string County,
     string? SubCounty,
     string? Ward,
-    string? Line1,
-    IReadOnlyList<NextOfKinRequestDto>? NextOfKin);
-
-public sealed record NextOfKinRequestDto(string FullName, string Relationship, string Phone);
+    string? Line1);
 
 public sealed record UpdatePatientDemographicsRequestDto(
     string FirstName,

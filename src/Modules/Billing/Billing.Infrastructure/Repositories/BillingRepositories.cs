@@ -82,7 +82,7 @@ public sealed class InvoiceRepository(BillingDbContext db) : IInvoiceRepository
 
         return new InvoiceDetailDto(
             i.Id, i.PatientId, i.ConsultationId, i.Status.ToString(), i.TotalAmount.Amount,
-            i.PrimaryPaymentMethod?.ToString(),
+            i.PrimaryPaymentMethod?.ToString(), i.CreatedAtUtc,
             i.Lines.Select(l => new InvoiceLineDto(
                 l.Id, l.ServiceCode, l.Description, l.Quantity,
                 l.UnitPrice.Amount, l.LineTotal.Amount)).ToArray());

@@ -56,9 +56,11 @@ public sealed class RegisterPatientCommandHandler(
             request.LastName,
             request.DateOfBirth,
             request.Gender,
-            request.MaritalStatus,
             phoneResult.Value,
-            addressResult.Value);
+            addressResult.Value,
+            request.InsuranceType,
+            request.InsuranceNumber,
+            request.ClinicType);
 
         if (patientResult.IsFailure) return patientResult.Error;
 
@@ -66,15 +68,6 @@ public sealed class RegisterPatientCommandHandler(
 
         if (nationalId is not null)
             patient.SetNationalId(nationalId);
-        patient.SetShaNumber(request.ShaNumber);
-
-        foreach (var kin in request.NextOfKin ?? [])
-        {
-            var kinPhone = PhoneNumber.Create(kin.Phone);
-            if (kinPhone.IsFailure) return kinPhone.Error;
-            var add = patient.AddNextOfKin(kin.FullName, kin.Relationship, kinPhone.Value);
-            if (add.IsFailure) return add.Error;
-        }
 
         await patients.AddAsync(patient, ct);
 

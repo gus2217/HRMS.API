@@ -19,6 +19,8 @@ public sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.Property(p => p.DateOfBirth).IsRequired();
         builder.Property(p => p.Gender).HasConversion<string>().HasMaxLength(16);
         builder.Property(p => p.MaritalStatus).HasConversion<string>().HasMaxLength(16);
+        builder.Property(p => p.InsuranceType).HasConversion<string>().HasMaxLength(16);
+        builder.Property(p => p.ClinicType).HasConversion<string>().HasMaxLength(48);
         builder.Property(p => p.Status).HasConversion<string>().HasMaxLength(16);
 
         builder.ComplexProperty(p => p.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
@@ -31,7 +33,7 @@ public sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
             a.Property(x => x.Line1).HasColumnName("AddressLine1").HasMaxLength(200);
         });
 
-        builder.Property(p => p.ShaNumber).HasMaxLength(64);
+        builder.Property(p => p.InsuranceNumber).HasMaxLength(64);
 
         builder.Property(p => p.RowVersion).IsConcurrencyToken();
 

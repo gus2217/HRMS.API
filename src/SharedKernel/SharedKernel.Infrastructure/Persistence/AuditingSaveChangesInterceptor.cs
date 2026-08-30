@@ -168,6 +168,7 @@ public sealed class AuditingSaveChangesInterceptor(IHttpContextAccessor httpCont
             if (name.Contains("Password", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("NationalId", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("ShaNumber", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("InsuranceNumber", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("TotpSecret", StringComparison.OrdinalIgnoreCase)
                 || name.Contains("Token", StringComparison.OrdinalIgnoreCase))
                 dict[name] = "[REDACTED]";

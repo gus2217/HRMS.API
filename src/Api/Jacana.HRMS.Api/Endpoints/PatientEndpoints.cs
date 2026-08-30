@@ -42,10 +42,9 @@ public static class PatientEndpoints
     {
         var result = await sender.Send(new RegisterPatientCommand(
             request.FirstName, request.LastName, request.DateOfBirth,
-            request.Gender, request.MaritalStatus, request.Phone,
-            request.NationalId, request.ShaNumber,
-            request.County, request.SubCounty, request.Ward, request.Line1,
-            request.NextOfKin?.Select(k => new NextOfKinInput(k.FullName, k.Relationship, k.Phone)).ToArray()), ct);
+            request.Gender, request.Phone,
+            request.NationalId, request.InsuranceType, request.InsuranceNumber, request.ClinicType,
+            request.County, request.SubCounty, request.Ward, request.Line1), ct);
 
         if (result.IsFailure) return MapError(result.Error);
 

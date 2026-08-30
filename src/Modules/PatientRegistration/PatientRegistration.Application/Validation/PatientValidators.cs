@@ -12,12 +12,13 @@ public sealed class RegisterPatientCommandValidator : AbstractValidator<Register
         RuleFor(x => x.DateOfBirth).NotEmpty();
         RuleFor(x => x.Phone).NotEmpty();
         RuleFor(x => x.County).NotEmpty().MaximumLength(100);
-        RuleForEach(x => x.NextOfKin).ChildRules(kin =>
-        {
-            kin.RuleFor(k => k.FullName).NotEmpty();
-            kin.RuleFor(k => k.Relationship).NotEmpty();
-            kin.RuleFor(k => k.Phone).NotEmpty();
-        });
+        RuleFor(x => x.InsuranceType).IsInEnum();
+        RuleFor(x => x.ClinicType).IsInEnum();
+        RuleFor(x => x.InsuranceNumber).MaximumLength(64);
+        RuleFor(x => x.InsuranceNumber)
+            .NotEmpty()
+            .When(x => x.InsuranceType != Domain.InsuranceType.Private)
+            .WithMessage("Insurance number is required when the patient is insured.");
     }
 }
 

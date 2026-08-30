@@ -61,7 +61,7 @@ internal static class Masked
         => d with
         {
             Phone = null,
-            ShaNumber = null,
+            InsuranceNumber = null,
             County = string.Empty,
             SubCounty = null,
             Ward = null,

@@ -13,7 +13,8 @@ internal static class PatientMapper
     public static PatientDetailDto ToDetail(Patient p) =>
         new(
             p.Id, p.PatientNumber, p.FirstName, p.LastName, p.DateOfBirth,
-            p.Gender.ToString(), p.MaritalStatus.ToString(), p.Phone.Value, p.ShaNumber,
+            p.Gender.ToString(), p.MaritalStatus.ToString(), p.Phone.Value,
+            p.InsuranceType.ToString(), p.InsuranceNumber, p.ClinicType.ToString(),
             p.Address.County, p.Address.SubCounty, p.Address.Ward, p.Address.Line1,
             p.Status.ToString(),
             p.Allergies.Select(a => new AllergyDto(a.Substance, a.Severity.ToString(), a.Notes)).ToArray(),

@@ -9,18 +9,16 @@ public sealed record RegisterPatientCommand(
     string LastName,
     DateOnly DateOfBirth,
     Gender Gender,
-    MaritalStatus MaritalStatus,
     string Phone,
     string? NationalId,
-    string? ShaNumber,
+    Domain.InsuranceType InsuranceType,
+    string? InsuranceNumber,
+    Domain.ClinicType ClinicType,
     string County,
     string? SubCounty,
     string? Ward,
-    string? Line1,
-    IReadOnlyList<NextOfKinInput>? NextOfKin)
+    string? Line1)
     : ICommand<Result<RegisterPatientResponseDto>>;
-
-public sealed record NextOfKinInput(string FullName, string Relationship, string Phone);
 
 public sealed record UpdatePatientDemographicsCommand(
     Guid PatientId,

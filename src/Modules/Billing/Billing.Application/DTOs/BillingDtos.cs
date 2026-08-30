@@ -32,6 +32,7 @@ public sealed record InvoiceDetailDto(
     string Status,
     decimal TotalAmount,
     string? PrimaryPaymentMethod,
+    DateTime CreatedAtUtc,
     IReadOnlyList<InvoiceLineDto> Lines);
 
 public sealed record PaymentReceiptDto(

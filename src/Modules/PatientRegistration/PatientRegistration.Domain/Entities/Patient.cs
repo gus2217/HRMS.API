@@ -23,9 +23,11 @@ public sealed class Patient : AggregateRoot<Guid>
         string lastName,
         DateOnly dateOfBirth,
         Gender gender,
-        MaritalStatus maritalStatus,
         PhoneNumber phone,
-        Address address)
+        Address address,
+        InsuranceType insuranceType,
+        string? insuranceNumber,
+        ClinicType clinicType)
         : base(id)
     {
         FacilityId = facilityId;
@@ -34,9 +36,12 @@ public sealed class Patient : AggregateRoot<Guid>
         LastName = lastName;
         DateOfBirth = dateOfBirth;
         Gender = gender;
-        MaritalStatus = maritalStatus;
+        MaritalStatus = MaritalStatus.Unknown;
         Phone = phone;
         Address = address;
+        InsuranceType = insuranceType;
+        InsuranceNumber = insuranceNumber;
+        ClinicType = clinicType;
         Status = RecordStatus.Active;
     }
 
@@ -49,7 +54,9 @@ public sealed class Patient : AggregateRoot<Guid>
     public MaritalStatus MaritalStatus { get; private set; }
     public PhoneNumber Phone { get; private set; } = null!;
     public NationalId? NationalId { get; private set; }
-    public string? ShaNumber { get; private set; }
+    public InsuranceType InsuranceType { get; private set; }
+    public string? InsuranceNumber { get; private set; }
+    public ClinicType ClinicType { get; private set; }
     public Address Address { get; private set; } = null!;
     public RecordStatus Status { get; private set; }
 
@@ -65,9 +72,11 @@ public sealed class Patient : AggregateRoot<Guid>
         string lastName,
         DateOnly dateOfBirth,
         Gender gender,
-        MaritalStatus maritalStatus,
         PhoneNumber phone,
-        Address address)
+        Address address,
+        InsuranceType insuranceType,
+        string? insuranceNumber,
+        ClinicType clinicType)
     {
         if (string.IsNullOrWhiteSpace(patientNumber))
             return Error.Validation("Patient number is required.");
@@ -75,9 +84,16 @@ public sealed class Patient : AggregateRoot<Guid>
             return Error.Validation("First name is required.");
         if (string.IsNullOrWhiteSpace(lastName))
             return Error.Validation("Last name is required.");
+        if (!Enum.IsDefined(insuranceType))
+            return Error.Validation("Insurance type is invalid.");
+        if (!Enum.IsDefined(clinicType))
+            return Error.Validation("Clinic type is invalid.");
+        if (insuranceType != InsuranceType.Private && string.IsNullOrWhiteSpace(insuranceNumber))
+            return Error.Validation("Insurance number is required for insured patients.");
 
         return new Patient(id, facilityId, patientNumber, firstName.Trim(), lastName.Trim(),
-            dateOfBirth, gender, maritalStatus, phone, address);
+            dateOfBirth, gender, phone, address, insuranceType,
+            insuranceNumber?.Trim(), clinicType);
     }
 
     public Result RegisterAllergy(string substance, AllergySeverity severity, string? notes)
@@ -108,11 +124,11 @@ public sealed class Patient : AggregateRoot<Guid>
         return Result.Success();
     }
 
-    public Result SetShaNumber(string? shaNumber)
+    public Result SetInsuranceNumber(string? insuranceNumber)
     {
-        if (shaNumber is not null && shaNumber.Length > 50)
-            return Error.Validation("SHA number is too long.");
-        ShaNumber = shaNumber;
+        if (insuranceNumber is not null && insuranceNumber.Length > 64)
+            return Error.Validation("Insurance number is too long.");
+        InsuranceNumber = insuranceNumber;
         return Result.Success();
     }
 
