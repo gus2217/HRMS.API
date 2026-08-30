@@ -81,6 +81,17 @@ public sealed class GetPrescriptionQueryHandler(IPrescriptionRepository prescrip
     }
 }
 
+public sealed class GetPrescriptionsByConsultationQueryHandler(IPrescriptionRepository prescriptions)
+    : IRequestHandler<GetPrescriptionsByConsultationQuery, Result<IReadOnlyList<PrescriptionDetailDto>>>
+{
+    public async Task<Result<IReadOnlyList<PrescriptionDetailDto>>> Handle(
+        GetPrescriptionsByConsultationQuery request, CancellationToken ct)
+    {
+        var items = await prescriptions.GetByConsultationAsync(request.ConsultationId, ct);
+        return Result.Success(items);
+    }
+}
+
 public sealed class SearchPrescriptionsQueryHandler(
     IPrescriptionRepository prescriptions,
     IPatientIdentityLookup patients)

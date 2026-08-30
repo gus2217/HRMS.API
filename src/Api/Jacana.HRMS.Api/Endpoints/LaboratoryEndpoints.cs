@@ -22,6 +22,9 @@ public static class LaboratoryEndpoints
         group.MapGet("/orders/{id:guid}", GetLabOrderAsync)
             .RequireAuthorization(Permissions.Lab.Order);
 
+        group.MapGet("/consultations/{consultationId:guid}/orders", GetLabOrdersByConsultationAsync)
+            .RequireAuthorization(Permissions.Clinical.View);
+
         group.MapPost("/orders/{id:guid}/results", RecordResultAsync)
             .RequireAuthorization(Permissions.Lab.RecordResult);
 
@@ -47,6 +50,13 @@ public static class LaboratoryEndpoints
     private static async Task<IResult> GetLabOrderAsync(Guid id, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new GetLabOrderQuery(id), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> GetLabOrdersByConsultationAsync(
+        Guid consultationId, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new GetLabOrdersByConsultationQuery(consultationId), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

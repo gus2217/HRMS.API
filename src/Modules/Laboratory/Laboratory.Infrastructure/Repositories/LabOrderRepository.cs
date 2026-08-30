@@ -73,4 +73,20 @@ public sealed class LabOrderRepository(LaboratoryDbContext db) : ILabOrderReposi
                 t.Id, t.TestCode, t.TestName, t.Status.ToString(),
                 t.ResultValue, t.ResultUnit, t.ReferenceRange, t.IsAbnormal)).ToArray());
     }
+
+    public async Task<IReadOnlyList<LabOrderDetailDto>> GetByConsultationAsync(Guid consultationId, CancellationToken ct = default)
+    {
+        var orders = await db.LabOrders.AsNoTracking()
+            .Include(x => x.Tests)
+            .Where(x => x.ConsultationId == consultationId)
+            .OrderByDescending(x => x.OrderedAtUtc)
+            .ToListAsync(ct);
+
+        return orders.Select(o => new LabOrderDetailDto(
+            o.Id, o.PatientId, o.ConsultationId, o.OrderedByUserId,
+            o.Status.ToString(), o.OrderedAtUtc,
+            o.Tests.Select(t => new LabTestItemDto(
+                t.Id, t.TestCode, t.TestName, t.Status.ToString(),
+                t.ResultValue, t.ResultUnit, t.ReferenceRange, t.IsAbnormal)).ToArray())).ToArray();
+    }
 }

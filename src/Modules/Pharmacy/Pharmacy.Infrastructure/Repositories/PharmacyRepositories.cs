@@ -73,6 +73,22 @@ public sealed class PrescriptionRepository(PharmacyDbContext db) : IPrescription
                 i.Id, i.DrugId, i.DosageInstructions, i.QuantityPrescribed,
                 i.QuantityDispensed, i.Status.ToString())).ToArray());
     }
+
+    public async Task<IReadOnlyList<PrescriptionDetailDto>> GetByConsultationAsync(Guid consultationId, CancellationToken ct = default)
+    {
+        var prescriptions = await db.Prescriptions.AsNoTracking()
+            .Include(x => x.Items)
+            .Where(x => x.ConsultationId == consultationId)
+            .OrderByDescending(x => x.PrescribedAtUtc)
+            .ToListAsync(ct);
+
+        return prescriptions.Select(p => new PrescriptionDetailDto(
+            p.Id, p.PatientId, p.ConsultationId, p.PrescribedByUserId,
+            p.Status.ToString(), p.PrescribedAtUtc,
+            p.Items.Select(i => new PrescriptionItemDto(
+                i.Id, i.DrugId, i.DosageInstructions, i.QuantityPrescribed,
+                i.QuantityDispensed, i.Status.ToString())).ToArray())).ToArray();
+    }
 }
 
 public sealed class DispenseRecordRepository(PharmacyDbContext db) : IDispenseRecordRepository

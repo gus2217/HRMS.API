@@ -22,6 +22,9 @@ public static class PharmacyEndpoints
         group.MapGet("/prescriptions/{id:guid}", GetPrescriptionAsync)
             .RequireAuthorization(Permissions.Pharmacy.Dispense);
 
+        group.MapGet("/consultations/{consultationId:guid}/prescriptions", GetPrescriptionsByConsultationAsync)
+            .RequireAuthorization(Permissions.Clinical.View);
+
         group.MapPost("/dispense", DispenseAsync)
             .RequireAuthorization(Permissions.Pharmacy.Dispense);
 
@@ -47,6 +50,13 @@ public static class PharmacyEndpoints
     private static async Task<IResult> GetPrescriptionAsync(Guid id, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new GetPrescriptionQuery(id), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> GetPrescriptionsByConsultationAsync(
+        Guid consultationId, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new GetPrescriptionsByConsultationQuery(consultationId), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

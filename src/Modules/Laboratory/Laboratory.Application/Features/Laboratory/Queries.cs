@@ -8,5 +8,8 @@ namespace Jacana.Laboratory.Application.Features.Laboratory;
 public sealed record GetLabOrderQuery(Guid LabOrderId)
     : IQuery<Result<LabOrderDetailDto>>;
 
+public sealed record GetLabOrdersByConsultationQuery(Guid ConsultationId)
+    : IQuery<Result<IReadOnlyList<LabOrderDetailDto>>>;
+
 public sealed record SearchLabOrdersQuery(int PageNumber, int PageSize, string? Status = null, Guid? PatientId = null)
     : IQuery<Result<PagedResult<LabOrderListItemDto>>>;

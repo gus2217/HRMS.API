@@ -66,6 +66,17 @@ public sealed class GetLabOrderQueryHandler(ILabOrderRepository orders)
     }
 }
 
+public sealed class GetLabOrdersByConsultationQueryHandler(ILabOrderRepository orders)
+    : IRequestHandler<GetLabOrdersByConsultationQuery, Result<IReadOnlyList<LabOrderDetailDto>>>
+{
+    public async Task<Result<IReadOnlyList<LabOrderDetailDto>>> Handle(
+        GetLabOrdersByConsultationQuery request, CancellationToken ct)
+    {
+        var items = await orders.GetByConsultationAsync(request.ConsultationId, ct);
+        return Result.Success(items);
+    }
+}
+
 public sealed class SearchLabOrdersQueryHandler(
     ILabOrderRepository orders,
     IPatientIdentityLookup patients)
