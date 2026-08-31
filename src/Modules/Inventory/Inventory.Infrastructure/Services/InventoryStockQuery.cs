@@ -17,7 +17,4 @@ public sealed class InventoryStockQuery(InventoryDbContext db) : IInventoryStock
             .Where(b => b.DrugId == drugId && b.QuantityOnHand > 0 && b.ExpiryDate >= today)
             .SumAsync(b => b.QuantityOnHand, ct);
     }
-
-    public Task<bool> IsTrackedAsync(Guid drugId, CancellationToken ct = default)
-        => db.StockBatches.AnyAsync(b => b.DrugId == drugId, ct);
 }

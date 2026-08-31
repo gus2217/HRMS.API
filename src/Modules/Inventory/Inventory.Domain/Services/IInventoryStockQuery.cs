@@ -9,11 +9,4 @@ namespace Jacana.Inventory.Domain;
 public interface IInventoryStockQuery
 {
     Task<int> GetAvailableQuantityAsync(Guid drugId, CancellationToken ct = default);
-
-    /// <summary>
-    /// True when the drug has at least one stock batch recorded (i.e. inventory
-    /// is actually tracked for it). Pharmacy uses this to decide whether the
-    /// dispense stock guard applies: an untracked drug must not block dispensing.
-    /// </summary>
-    Task<bool> IsTrackedAsync(Guid drugId, CancellationToken ct = default);
 }
