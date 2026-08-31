@@ -8,5 +8,5 @@ namespace Jacana.PatientRegistration.Application.Features.Patients;
 public sealed record GetPatientQuery(Guid PatientId)
     : IQuery<Result<PatientDetailDto>>;
 
-public sealed record SearchPatientsQuery(string? Search, int PageNumber, int PageSize)
+public sealed record SearchPatientsQuery(string? Search, int PageNumber, int PageSize, string? Sort = null)
     : IQuery<Result<PagedResult<PatientSummaryDto>>>;

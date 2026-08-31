@@ -62,9 +62,9 @@ public static class PatientEndpoints
     }
 
     private static async Task<IResult> SearchAsync(
-        string? search, ISender sender, CancellationToken ct, int pageNumber = 1, int pageSize = 50)
+        string? search, ISender sender, CancellationToken ct, string? sort = null, int pageNumber = 1, int pageSize = 50)
     {
-        var result = await sender.Send(new SearchPatientsQuery(search, pageNumber, pageSize), ct);
+        var result = await sender.Send(new SearchPatientsQuery(search, pageNumber, pageSize, sort), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

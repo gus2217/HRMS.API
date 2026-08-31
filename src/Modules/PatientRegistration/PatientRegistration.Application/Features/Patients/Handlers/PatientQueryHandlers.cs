@@ -37,7 +37,7 @@ public sealed class SearchPatientsQueryHandler(IPatientRepository patients, ICur
 {
     public async Task<Result<PagedResult<PatientSummaryDto>>> Handle(SearchPatientsQuery request, CancellationToken ct)
     {
-        var items = await patients.SearchAsync(request.Search, request.PageNumber, request.PageSize, ct);
+        var items = await patients.SearchAsync(request.Search, request.PageNumber, request.PageSize, request.Sort, ct);
         var total = await patients.CountAsync(request.Search, ct);
 
         if (!currentUser.Permissions.Contains(PatientConfidentialPermission.Code))

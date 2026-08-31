@@ -35,14 +35,17 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
     }
 
     public async Task<IReadOnlyList<PatientSummaryDto>> SearchAsync(
-        string? search, int pageNumber, int pageSize, CancellationToken ct = default)
+        string? search, int pageNumber, int pageSize, string? sort = null, CancellationToken ct = default)
     {
         var query = db.Patients.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(p => p.FirstName.Contains(search) || p.LastName.Contains(search) || p.PatientNumber.Contains(search));
 
+        query = string.Equals(sort, "latest", StringComparison.OrdinalIgnoreCase)
+            ? query.OrderByDescending(p => p.CreatedAtUtc)
+            : query.OrderBy(p => p.LastName).ThenBy(p => p.FirstName);
+
         return await query
-            .OrderBy(p => p.LastName).ThenBy(p => p.FirstName)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new PatientSummaryDto(
