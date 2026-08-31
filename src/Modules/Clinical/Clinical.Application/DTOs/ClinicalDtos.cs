@@ -102,7 +102,8 @@ public sealed record PatientClinicalHistoryDto(
 /// </summary>
 public sealed record PatientMedicalRecordDto(
     Guid PatientId,
-    IReadOnlyList<ConsultationRecordDto> Consultations);
+    IReadOnlyList<ConsultationRecordDto> Consultations,
+    IReadOnlyList<AppointmentDto> Appointments);
 
 public sealed record ConsultationRecordDto(
     Guid Id,
@@ -113,4 +114,5 @@ public sealed record ConsultationRecordDto(
     IReadOnlyList<DiagnosisDto> Diagnoses,
     IReadOnlyList<ClinicalNoteDto> Notes,
     ClinicalDocumentationDto? Documentation,
-    IReadOnlyList<ReferralDto> Referrals);
+    IReadOnlyList<ReferralDto> Referrals,
+    string Source);

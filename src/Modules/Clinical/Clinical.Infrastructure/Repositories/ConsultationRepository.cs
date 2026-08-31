@@ -169,7 +169,7 @@ public sealed class ConsultationRepository(ClinicalDbContext db) : IConsultation
     /// newest first. Lab orders/prescriptions are resolved by the frontend via the
     /// by-consultation endpoints (also Clinical.View-gated).
     /// </summary>
-    public async Task<PatientMedicalRecordDto?> GetMedicalRecordAsync(Guid patientId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<ConsultationRecordDto>?> GetMedicalRecordAsync(Guid patientId, CancellationToken ct = default)
     {
         var consultations = await db.Consultations.AsNoTracking()
             .Include(c => c.Diagnoses)
@@ -223,8 +223,9 @@ public sealed class ConsultationRepository(ClinicalDbContext db) : IConsultation
                 c.Documentation.LastSavedByUserId),
             c.Referrals.Select(r => new ReferralDto(
                 r.Id, r.ReferredToFacility, r.ReferredToUnit, r.Reason,
-                r.Priority.ToString(), r.Status.ToString(), r.Notes, r.ReferredAtUtc)).ToArray())).ToArray();
+                r.Priority.ToString(), r.Status.ToString(), r.Notes, r.ReferredAtUtc)).ToArray(),
+            c.Source.ToString())).ToArray();
 
-        return new PatientMedicalRecordDto(patientId, records);
+        return records;
     }
 }

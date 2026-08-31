@@ -75,6 +75,8 @@ builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, CurrentUserService>();
 builder.Services.AddSingleton<IPatientIdentityLookup>(_ =>
     new PatientIdentityLookup(connectionString));
+builder.Services.AddSingleton<IUserIdentityLookup>(_ =>
+    new UserIdentityLookup(connectionString));
 builder.Services.AddSingleton<IValueEncryptor>(_ =>
     new Jacana.SharedKernel.Infrastructure.Security.AesGcmValueEncryptor(
         builder.Configuration["Security:EncryptionKey"]
@@ -202,6 +204,7 @@ app.MapIdentityEndpoints();
 app.MapPatientEndpoints();
 app.MapClinicalEndpoints();
 app.MapQueueEndpoints();
+app.MapAppointmentEndpoints();
 app.MapInventoryEndpoints();
 app.MapPharmacyEndpoints();
 app.MapLaboratoryEndpoints();

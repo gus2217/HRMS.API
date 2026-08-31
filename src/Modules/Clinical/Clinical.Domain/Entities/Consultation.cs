@@ -25,6 +25,7 @@ public sealed class Consultation : AggregateRoot<Guid>
         ClinicianUserId = clinicianUserId;
         StartedAtUtc = startedAtUtc;
         Status = ConsultationStatus.Registered;
+        Source = ConsultationSource.Direct;
     }
 
     public FacilityId FacilityId { get; private set; } = null!;
@@ -34,6 +35,11 @@ public sealed class Consultation : AggregateRoot<Guid>
     public DateTime StartedAtUtc { get; private set; }
     public DateTime? CompletedAtUtc { get; private set; }
     public TriageData? Triage { get; private set; }
+
+    /// <summary>How the consultation originated (walk-in, queue, appointment).</summary>
+    public ConsultationSource Source { get; private set; }
+    /// <summary>Links back to the queue entry / appointment that spawned this visit.</summary>
+    public Guid? SourceReferenceId { get; private set; }
 
     public IReadOnlyCollection<Diagnosis> Diagnoses => _diagnoses.AsReadOnly();
     public IReadOnlyCollection<ClinicalNote> Notes => _notes.AsReadOnly();
@@ -63,6 +69,13 @@ public sealed class Consultation : AggregateRoot<Guid>
         if (patientId == Guid.Empty) return Error.Validation("Patient is required.");
         if (clinicianUserId == Guid.Empty) return Error.Validation("Clinician is required.");
         return new Consultation(id, facilityId, patientId, clinicianUserId, startedAtUtc);
+    }
+
+    /// <summary>Tags a consultation's origin (walk-in, queue, appointment) after start.</summary>
+    public void SetSource(ConsultationSource source, Guid? sourceReferenceId)
+    {
+        Source = source;
+        SourceReferenceId = sourceReferenceId;
     }
 
     public Result RecordTriage(TriageData triage)

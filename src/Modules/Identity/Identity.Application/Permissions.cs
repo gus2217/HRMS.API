@@ -58,6 +58,18 @@ public static class Permissions
         public const string Accept = "Queue.Accept";
     }
 
+    public static class Appointment
+    {
+        /// <summary>Book/start/manage appointments (clinicians).</summary>
+        public const string Create = "Appointment.Create";
+        /// <summary>View the appointment calendar, day queue and requests.</summary>
+        public const string View = "Appointment.View";
+        /// <summary>Reception raises appointment requests for a clinic.</summary>
+        public const string Request = "Appointment.Request";
+        /// <summary>Approve or decline appointment requests.</summary>
+        public const string Approve = "Appointment.Approve";
+    }
+
     public static class Lab
     {
         public const string Order = "Laboratory.Order";

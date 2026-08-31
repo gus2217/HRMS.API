@@ -17,6 +17,8 @@ public sealed class ClinicalDbContext : DbContext
     public DbSet<ClinicalDocumentation> ClinicalDocumentations => Set<ClinicalDocumentation>();
     public DbSet<Referral> Referrals => Set<Referral>();
     public DbSet<QueueEntry> QueueEntries => Set<QueueEntry>();
+    public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<AppointmentRequest> AppointmentRequests => Set<AppointmentRequest>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 

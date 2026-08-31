@@ -16,6 +16,8 @@ public sealed class ConsultationConfiguration : IEntityTypeConfiguration<Consult
         builder.Property(c => c.Status).HasConversion<string>().HasMaxLength(32);
         builder.Property(c => c.StartedAtUtc).IsRequired();
         builder.Property(c => c.CompletedAtUtc);
+        builder.Property(c => c.Source).HasConversion<string>().HasMaxLength(16);
+        builder.Property(c => c.SourceReferenceId);
 
         builder.ComplexProperty(c => c.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.OwnsOne(c => c.Triage, t =>
@@ -174,5 +176,63 @@ public sealed class QueueEntryConfiguration : IEntityTypeConfiguration<QueueEntr
         // Queue board queries filter by clinic/status and order by priority + time.
         builder.HasIndex(q => new { q.ClinicType, q.Status });
         builder.HasIndex(q => q.ConsultationId).IsUnique();
+    }
+}
+
+public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
+{
+    public void Configure(EntityTypeBuilder<Appointment> builder)
+    {
+        builder.ToTable("appointments");
+        builder.HasKey(a => a.Id);
+
+        builder.Property(a => a.PatientId).IsRequired();
+        builder.Property(a => a.ClinicType).HasMaxLength(64).IsRequired();
+        builder.Property(a => a.Type).HasConversion<string>().HasMaxLength(16);
+        builder.Property(a => a.Status).HasConversion<string>().HasMaxLength(16);
+        builder.Property(a => a.ScheduledAtUtc).IsRequired();
+        builder.Property(a => a.DurationMinutes).IsRequired();
+        builder.Property(a => a.Reason).HasMaxLength(500);
+        builder.Property(a => a.RecurrenceGroupId);
+        builder.Property(a => a.RecurrencePattern).HasConversion<string>().HasMaxLength(16);
+        builder.Property(a => a.CreatedByUserId).IsRequired();
+        builder.Property(a => a.CreatedAtUtc).IsRequired();
+        builder.Property(a => a.ConsultationId);
+        builder.Property(a => a.StartedAtUtc);
+        builder.Property(a => a.CompletedAtUtc);
+
+        builder.ComplexProperty(a => a.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.Property(a => a.RowVersion).IsConcurrencyToken();
+
+        // Calendar/day-queue lookups filter by facility + scheduled date + clinic + status.
+        builder.HasIndex(a => new { a.ClinicType, a.Status });
+        builder.HasIndex(a => a.ScheduledAtUtc);
+        builder.HasIndex(a => a.ConsultationId).IsUnique();
+    }
+}
+
+public sealed class AppointmentRequestConfiguration : IEntityTypeConfiguration<AppointmentRequest>
+{
+    public void Configure(EntityTypeBuilder<AppointmentRequest> builder)
+    {
+        builder.ToTable("appointment_requests");
+        builder.HasKey(r => r.Id);
+
+        builder.Property(r => r.PatientId).IsRequired();
+        builder.Property(r => r.ClinicType).HasMaxLength(64).IsRequired();
+        builder.Property(r => r.Reason).HasMaxLength(500).IsRequired();
+        builder.Property(r => r.Notes).HasMaxLength(500);
+        builder.Property(r => r.PreferredDate);
+        builder.Property(r => r.Status).HasConversion<string>().HasMaxLength(16);
+        builder.Property(r => r.RequestedByUserId).IsRequired();
+        builder.Property(r => r.RequestedAtUtc).IsRequired();
+        builder.Property(r => r.ApprovedByUserId);
+        builder.Property(r => r.ApprovedAtUtc);
+        builder.Property(r => r.AppointmentId);
+
+        builder.ComplexProperty(r => r.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.Property(r => r.RowVersion).IsConcurrencyToken();
+
+        builder.HasIndex(r => new { r.ClinicType, r.Status });
     }
 }

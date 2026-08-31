@@ -147,6 +147,10 @@ static async Task SeedIdentityAsync(string cs, string password)
         ("Queue.Create", "Queue patients for consultations"),
         ("Queue.View", "View the consultation queue"),
         ("Queue.Accept", "Accept queue entries and register consultations"),
+        ("Appointment.Create", "Book and manage appointments"),
+        ("Appointment.View", "View the appointment calendar and queue"),
+        ("Appointment.Request", "Raise appointment requests for clinics"),
+        ("Appointment.Approve", "Approve or decline appointment requests"),
     };
 
     var permissions = new Dictionary<string, Permission>(StringComparer.Ordinal);
@@ -176,6 +180,7 @@ static async Task SeedIdentityAsync(string cs, string password)
             "Patient.View", "Patient.Register", "Patient.ConfidentialView",
             "Laboratory.Order", "Pharmacy.Dispense",
             "Queue.View", "Queue.Accept",
+            "Appointment.Create", "Appointment.View", "Appointment.Approve",
         },
         [nameof(SystemRole.Nurse)] = new[]
         {
@@ -183,12 +188,14 @@ static async Task SeedIdentityAsync(string cs, string password)
             "Patient.ConfidentialView", // triage/notes need contact + NOK context
             "Clinical.Consult", // triage, begin phase, clinical notes
             "Queue.View", "Queue.Accept",
+            "Appointment.Create", "Appointment.View",
         },
         [nameof(SystemRole.Receptionist)] = new[]
         {
             "Patient.Register", "Patient.View", "Patient.Update", "Patient.ConfidentialView",
             "Billing.IssueInvoice", "Billing.View",
             "Queue.Create", "Queue.View",
+            "Appointment.View", "Appointment.Request",
         },
         [nameof(SystemRole.LabTechnician)] = new[]
         {

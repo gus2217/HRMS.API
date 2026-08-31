@@ -95,6 +95,7 @@ public sealed class AcceptQueueEntryCommandHandler(
         var consultation = Consultation.Start(
             Guid.NewGuid(), currentUser.FacilityId, entry.PatientId, currentUser.UserId, clock.UtcNow);
         if (consultation.IsFailure) return consultation.Error;
+        consultation.Value.SetSource(ConsultationSource.Queue, entry.Id);
 
         var accept = entry.Accept(currentUser.UserId, consultation.Value.Id, clock.UtcNow);
         if (accept.IsFailure) return accept.Error;

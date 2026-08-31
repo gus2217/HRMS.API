@@ -27,13 +27,34 @@ public sealed class GetPatientHistoryQueryHandler(IConsultationRepository consul
     }
 }
 
-public sealed class GetPatientMedicalRecordQueryHandler(IConsultationRepository consultations)
+public sealed class GetPatientMedicalRecordQueryHandler(
+    IConsultationRepository consultations,
+    IAppointmentRepository appointments,
+    IPatientIdentityLookup patients)
     : IRequestHandler<GetPatientMedicalRecordQuery, Result<PatientMedicalRecordDto>>
 {
     public async Task<Result<PatientMedicalRecordDto>> Handle(GetPatientMedicalRecordQuery request, CancellationToken ct)
     {
-        var record = await consultations.GetMedicalRecordAsync(request.PatientId, ct);
-        return record is null ? Error.NotFound("No medical record found for this patient.") : record;
+        var records = await consultations.GetMedicalRecordAsync(request.PatientId, ct) ?? [];
+        var apptSummaries = await appointments.GetByPatientAsync(request.PatientId, ct);
+
+        if (records.Count == 0 && apptSummaries.Count == 0)
+            return Error.NotFound("No medical record found for this patient.");
+
+        var identities = await patients.GetIdentitiesAsync(
+            apptSummaries.Select(a => a.PatientId).Distinct().ToArray(), ct);
+
+        var apptDtos = apptSummaries.Select(a =>
+        {
+            identities.TryGetValue(a.PatientId, out var patient);
+            return new AppointmentDto(
+                a.Id, a.PatientId, patient?.PatientNumber ?? string.Empty, patient?.FullName ?? string.Empty,
+                a.ClinicType, a.Type, a.Status, a.ScheduledAtUtc, a.DurationMinutes,
+                a.Reason, a.RecurrenceGroupId, a.RecurrencePattern,
+                a.CreatedByUserId, a.CreatedAtUtc, a.ConsultationId, a.StartedAtUtc, a.CompletedAtUtc);
+        }).ToArray();
+
+        return new PatientMedicalRecordDto(request.PatientId, records, apptDtos);
     }
 }
 

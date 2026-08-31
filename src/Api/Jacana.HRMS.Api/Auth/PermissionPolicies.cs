@@ -34,6 +34,8 @@ public static class PermissionPolicies
         Permissions.Lab.Order, Permissions.Lab.RecordResult,
         Permissions.Pharmacy.Dispense,
         Permissions.Inventory.Receive, Permissions.Inventory.Adjust,
-        Permissions.Queue.Create, Permissions.Queue.View, Permissions.Queue.Accept
+        Permissions.Queue.Create, Permissions.Queue.View, Permissions.Queue.Accept,
+        Permissions.Appointment.Create, Permissions.Appointment.View,
+        Permissions.Appointment.Request, Permissions.Appointment.Approve
     ];
 }

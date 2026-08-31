@@ -21,6 +21,8 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, DbContextUnitOfWork<ClinicalDbContext>>();
         services.AddScoped<IConsultationRepository, ConsultationRepository>();
         services.AddScoped<IQueueEntryRepository, QueueEntryRepository>();
+        services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+        services.AddScoped<IAppointmentRequestRepository, AppointmentRequestRepository>();
 
         return services;
     }

@@ -186,6 +186,8 @@ public sealed class AttachLabOrderCommandHandler(IConsultationRepository consult
 
 public sealed class CompleteConsultationCommandHandler(
     IConsultationRepository consultations,
+    IQueueEntryRepository queue,
+    IAppointmentRepository appointments,
     IClock clock)
     : IRequestHandler<CompleteConsultationCommand, Result<ConsultationDetailDto>>
 {
@@ -198,6 +200,22 @@ public sealed class CompleteConsultationCommandHandler(
         if (result.IsFailure) return result.Error;
 
         await consultations.UpdateAsync(consultation, ct);
+
+        // Close the linked queue entry (walk-in) or appointment (booked visit).
+        var entry = await queue.GetByConsultationIdAsync(request.ConsultationId, ct);
+        if (entry is not null && entry.Status == QueueStatus.Accepted)
+        {
+            entry.Complete(clock.UtcNow);
+            await queue.UpdateAsync(entry, ct);
+        }
+
+        var appointment = await appointments.GetByConsultationIdAsync(request.ConsultationId, ct);
+        if (appointment is not null)
+        {
+            appointment.Complete(clock.UtcNow);
+            await appointments.UpdateAsync(appointment, ct);
+        }
+
         return ConsultationMapper.ToDetail(consultation);
     }
 }

@@ -12,7 +12,7 @@ public interface IConsultationRepository
     Task<ConsultationDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<ConsultationSummaryDto>> GetByPatientAsync(Guid patientId, CancellationToken ct = default);
     Task<PatientClinicalHistoryDto?> GetPatientHistoryAsync(Guid patientId, CancellationToken ct = default);
-    Task<PatientMedicalRecordDto?> GetMedicalRecordAsync(Guid patientId, CancellationToken ct = default);
+    Task<IReadOnlyList<ConsultationRecordDto>?> GetMedicalRecordAsync(Guid patientId, CancellationToken ct = default);
     Task<IReadOnlyList<ConsultationSummaryDto>> SearchAsync(
         string? status, int pageNumber, int pageSize, CancellationToken ct = default);
     Task<int> CountAsync(string? status, CancellationToken ct = default);
