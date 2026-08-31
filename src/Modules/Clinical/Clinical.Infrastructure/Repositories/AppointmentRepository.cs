@@ -101,7 +101,7 @@ public sealed class AppointmentRepository(ClinicalDbContext db) : IAppointmentRe
 
     private static AppointmentSummaryDto Map(Appointment a) => new(
         a.Id, a.PatientId, a.ClinicType, a.Type.ToString(), a.Status.ToString(),
-        a.ScheduledAtUtc, a.DurationMinutes, a.Reason, a.RecurrenceGroupId,
+        a.ScheduledAtUtc, a.DurationMinutes, a.Reason, a.PreviousConsultationId, a.RecurrenceGroupId,
         a.RecurrencePattern.ToString(), a.CreatedByUserId, a.CreatedAtUtc,
         a.ConsultationId, a.StartedAtUtc, a.CompletedAtUtc);
 }

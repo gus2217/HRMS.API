@@ -32,7 +32,11 @@ public sealed record ConsultationDetailDto(
     IReadOnlyList<DiagnosisDto> Diagnoses,
     IReadOnlyList<ClinicalNoteDto> Notes,
     ClinicalDocumentationDto? Documentation,
-    IReadOnlyList<ReferralDto> Referrals);
+    IReadOnlyList<ReferralDto> Referrals,
+    string Source,
+    Guid? SourceReferenceId,
+    Guid? PreviousConsultationId,
+    IReadOnlyList<DiagnosisDto> PriorDiagnoses);
 
 public sealed record TriageDataDto(
     decimal? TemperatureCelsius,
@@ -115,4 +119,5 @@ public sealed record ConsultationRecordDto(
     IReadOnlyList<ClinicalNoteDto> Notes,
     ClinicalDocumentationDto? Documentation,
     IReadOnlyList<ReferralDto> Referrals,
-    string Source);
+    string Source,
+    Guid? PreviousConsultationId);

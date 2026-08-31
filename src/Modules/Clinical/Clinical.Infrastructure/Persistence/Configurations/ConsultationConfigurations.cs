@@ -18,6 +18,7 @@ public sealed class ConsultationConfiguration : IEntityTypeConfiguration<Consult
         builder.Property(c => c.CompletedAtUtc);
         builder.Property(c => c.Source).HasConversion<string>().HasMaxLength(16);
         builder.Property(c => c.SourceReferenceId);
+        builder.Property(c => c.PreviousConsultationId);
 
         builder.ComplexProperty(c => c.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.OwnsOne(c => c.Triage, t =>
@@ -193,6 +194,7 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
         builder.Property(a => a.ScheduledAtUtc).IsRequired();
         builder.Property(a => a.DurationMinutes).IsRequired();
         builder.Property(a => a.Reason).HasMaxLength(500);
+        builder.Property(a => a.PreviousConsultationId);
         builder.Property(a => a.RecurrenceGroupId);
         builder.Property(a => a.RecurrencePattern).HasConversion<string>().HasMaxLength(16);
         builder.Property(a => a.CreatedByUserId).IsRequired();

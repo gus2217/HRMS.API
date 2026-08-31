@@ -83,6 +83,7 @@ public sealed class ApproveAppointmentRequestCommandHandler(
         var appt = Appointment.Create(
             Guid.NewGuid(), currentUser.FacilityId, entry.PatientId, entry.ClinicType,
             type, request.ScheduledAtUtc, request.DurationMinutes, entry.Reason,
+            request.PreviousConsultationId,
             null, RecurrencePattern.None, currentUser.UserId, clock.UtcNow);
         if (appt.IsFailure) return appt.Error;
 
@@ -98,7 +99,7 @@ public sealed class ApproveAppointmentRequestCommandHandler(
         return new AppointmentDto(
             a.Id, a.PatientId, patient?.PatientNumber ?? string.Empty, patient?.FullName ?? string.Empty,
             a.ClinicType, a.Type.ToString(), a.Status.ToString(), a.ScheduledAtUtc, a.DurationMinutes,
-            a.Reason, a.RecurrenceGroupId, a.RecurrencePattern.ToString(),
+            a.Reason, a.PreviousConsultationId, a.RecurrenceGroupId, a.RecurrencePattern.ToString(),
             a.CreatedByUserId, a.CreatedAtUtc, a.ConsultationId, a.StartedAtUtc, a.CompletedAtUtc);
     }
 }

@@ -56,6 +56,14 @@ public sealed class ConsultationRepository(ClinicalDbContext db) : IConsultation
 
         if (c is null) return null;
 
+        var priorDiagnoses = c.PreviousConsultationId is not null
+            ? await db.Consultations.AsNoTracking()
+                .Where(p => p.Id == c.PreviousConsultationId)
+                .SelectMany(p => p.Diagnoses)
+                .Select(d => new DiagnosisDto(d.IcdCode, d.Description, d.IsPrimary))
+                .ToListAsync(ct)
+            : [];
+
         return new ConsultationDetailDto(
             c.Id, c.PatientId, c.ClinicianUserId, c.Status.ToString(),
             c.StartedAtUtc, c.CompletedAtUtc,
@@ -98,7 +106,8 @@ public sealed class ConsultationRepository(ClinicalDbContext db) : IConsultation
                 c.Documentation.LastSavedByUserId),
             c.Referrals.Select(r => new ReferralDto(
                 r.Id, r.ReferredToFacility, r.ReferredToUnit, r.Reason,
-                r.Priority.ToString(), r.Status.ToString(), r.Notes, r.ReferredAtUtc)).ToArray());
+                r.Priority.ToString(), r.Status.ToString(), r.Notes, r.ReferredAtUtc)).ToArray(),
+            c.Source.ToString(), c.SourceReferenceId, c.PreviousConsultationId, priorDiagnoses);
     }
 
     public async Task<IReadOnlyList<ConsultationSummaryDto>> GetByPatientAsync(Guid patientId, CancellationToken ct = default)
@@ -224,7 +233,7 @@ public sealed class ConsultationRepository(ClinicalDbContext db) : IConsultation
             c.Referrals.Select(r => new ReferralDto(
                 r.Id, r.ReferredToFacility, r.ReferredToUnit, r.Reason,
                 r.Priority.ToString(), r.Status.ToString(), r.Notes, r.ReferredAtUtc)).ToArray(),
-            c.Source.ToString())).ToArray();
+            c.Source.ToString(), c.PreviousConsultationId)).ToArray();
 
         return records;
     }

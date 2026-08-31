@@ -50,7 +50,7 @@ public sealed class GetPatientMedicalRecordQueryHandler(
             return new AppointmentDto(
                 a.Id, a.PatientId, patient?.PatientNumber ?? string.Empty, patient?.FullName ?? string.Empty,
                 a.ClinicType, a.Type, a.Status, a.ScheduledAtUtc, a.DurationMinutes,
-                a.Reason, a.RecurrenceGroupId, a.RecurrencePattern,
+                a.Reason, a.PreviousConsultationId, a.RecurrenceGroupId, a.RecurrencePattern,
                 a.CreatedByUserId, a.CreatedAtUtc, a.ConsultationId, a.StartedAtUtc, a.CompletedAtUtc);
         }).ToArray();
 

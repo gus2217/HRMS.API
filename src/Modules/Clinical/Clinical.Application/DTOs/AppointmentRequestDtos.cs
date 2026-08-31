@@ -8,6 +8,7 @@ public sealed record CreateAppointmentRequestDto(
     DateTime ScheduledAtUtc,
     int DurationMinutes,
     string? Reason,
+    Guid? PreviousConsultationId,
     string? RecurrencePattern,
     int RecurrenceCount,
     DateOnly? RecurrenceEndDate);
@@ -24,4 +25,5 @@ public sealed record CreateAppointmentRequestRequestDto(
 public sealed record ApproveAppointmentRequestRequestDto(
     DateTime ScheduledAtUtc,
     int DurationMinutes,
-    string Type);
+    string Type,
+    Guid? PreviousConsultationId);

@@ -12,6 +12,7 @@ public sealed record CreateAppointmentCommand(
     DateTime ScheduledAtUtc,
     int DurationMinutes,
     string? Reason,
+    Guid? PreviousConsultationId,
     string? RecurrencePattern,
     int RecurrenceCount,
     DateOnly? RecurrenceEndDate)
@@ -62,7 +63,8 @@ public sealed record ApproveAppointmentRequestCommand(
     Guid RequestId,
     DateTime ScheduledAtUtc,
     int DurationMinutes,
-    string Type)
+    string Type,
+    Guid? PreviousConsultationId)
     : ICommand<Result<AppointmentDto>>;
 
 public sealed record DeclineAppointmentRequestCommand(

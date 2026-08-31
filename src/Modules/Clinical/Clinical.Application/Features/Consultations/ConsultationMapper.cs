@@ -53,5 +53,9 @@ internal static class ConsultationMapper
                 c.Documentation.LastSavedByUserId),
             c.Referrals.Select(r => new ReferralDto(
                 r.Id, r.ReferredToFacility, r.ReferredToUnit, r.Reason,
-                r.Priority.ToString(), r.Status.ToString(), r.Notes, r.ReferredAtUtc)).ToArray());
+                r.Priority.ToString(), r.Status.ToString(), r.Notes, r.ReferredAtUtc)).ToArray(),
+            c.Source.ToString(),
+            c.SourceReferenceId,
+            c.PreviousConsultationId,
+            []);
 }

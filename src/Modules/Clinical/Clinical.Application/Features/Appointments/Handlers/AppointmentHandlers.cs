@@ -49,6 +49,7 @@ public sealed class CreateAppointmentCommandHandler(
             var appt = Appointment.Create(
                 Guid.NewGuid(), currentUser.FacilityId, request.PatientId, request.ClinicType,
                 type, scheduledAt, request.DurationMinutes, request.Reason,
+                request.PreviousConsultationId,
                 groupId, pattern, currentUser.UserId, clock.UtcNow);
             if (appt.IsFailure) return appt.Error;
 
@@ -74,7 +75,7 @@ public sealed class CreateAppointmentCommandHandler(
     internal static AppointmentDto Map(Appointment a) => new(
         a.Id, a.PatientId, string.Empty, string.Empty, a.ClinicType,
         a.Type.ToString(), a.Status.ToString(), a.ScheduledAtUtc, a.DurationMinutes,
-        a.Reason, a.RecurrenceGroupId, a.RecurrencePattern.ToString(),
+        a.Reason, a.PreviousConsultationId, a.RecurrenceGroupId, a.RecurrencePattern.ToString(),
         a.CreatedByUserId, a.CreatedAtUtc, a.ConsultationId, a.StartedAtUtc, a.CompletedAtUtc);
 }
 
@@ -99,6 +100,11 @@ public sealed class StartAppointmentCommandHandler(
         if (consultation.IsFailure) return consultation.Error;
         consultation.Value.SetSource(ConsultationSource.Appointment, appt.Id);
 
+        // Follow-up/check-up: keep the visit in the same episode of care so the
+        // new consultation carries the prior visit's diagnoses forward.
+        if (appt.PreviousConsultationId is not null)
+            consultation.Value.SetPreviousConsultation(appt.PreviousConsultationId.Value);
+
         var start = appt.Start(consultation.Value.Id, clock.UtcNow);
         if (start.IsFailure) return start.Error;
 
@@ -116,7 +122,7 @@ public sealed class StartAppointmentCommandHandler(
         return new AppointmentDto(
             a.Id, a.PatientId, patient?.PatientNumber ?? string.Empty, patient?.FullName ?? string.Empty,
             a.ClinicType, a.Type.ToString(), a.Status.ToString(), a.ScheduledAtUtc, a.DurationMinutes,
-            a.Reason, a.RecurrenceGroupId, a.RecurrencePattern.ToString(),
+            a.Reason, a.PreviousConsultationId, a.RecurrenceGroupId, a.RecurrencePattern.ToString(),
             a.CreatedByUserId, a.CreatedAtUtc, a.ConsultationId, a.StartedAtUtc, a.CompletedAtUtc);
     }
 }
@@ -142,7 +148,7 @@ public sealed class CompleteAppointmentCommandHandler(
         return new AppointmentDto(
             appt.Id, appt.PatientId, patient?.PatientNumber ?? string.Empty, patient?.FullName ?? string.Empty,
             appt.ClinicType, appt.Type.ToString(), appt.Status.ToString(), appt.ScheduledAtUtc, appt.DurationMinutes,
-            appt.Reason, appt.RecurrenceGroupId, appt.RecurrencePattern.ToString(),
+            appt.Reason, appt.PreviousConsultationId, appt.RecurrenceGroupId, appt.RecurrencePattern.ToString(),
             appt.CreatedByUserId, appt.CreatedAtUtc, appt.ConsultationId, appt.StartedAtUtc, appt.CompletedAtUtc);
     }
 }
@@ -168,7 +174,7 @@ public sealed class CancelAppointmentCommandHandler(
         return new AppointmentDto(
             appt.Id, appt.PatientId, patient?.PatientNumber ?? string.Empty, patient?.FullName ?? string.Empty,
             appt.ClinicType, appt.Type.ToString(), appt.Status.ToString(), appt.ScheduledAtUtc, appt.DurationMinutes,
-            appt.Reason, appt.RecurrenceGroupId, appt.RecurrencePattern.ToString(),
+            appt.Reason, appt.PreviousConsultationId, appt.RecurrenceGroupId, appt.RecurrencePattern.ToString(),
             appt.CreatedByUserId, appt.CreatedAtUtc, appt.ConsultationId, appt.StartedAtUtc, appt.CompletedAtUtc);
     }
 }
@@ -194,7 +200,7 @@ public sealed class NoShowAppointmentCommandHandler(
         return new AppointmentDto(
             appt.Id, appt.PatientId, patient?.PatientNumber ?? string.Empty, patient?.FullName ?? string.Empty,
             appt.ClinicType, appt.Type.ToString(), appt.Status.ToString(), appt.ScheduledAtUtc, appt.DurationMinutes,
-            appt.Reason, appt.RecurrenceGroupId, appt.RecurrencePattern.ToString(),
+            appt.Reason, appt.PreviousConsultationId, appt.RecurrenceGroupId, appt.RecurrencePattern.ToString(),
             appt.CreatedByUserId, appt.CreatedAtUtc, appt.ConsultationId, appt.StartedAtUtc, appt.CompletedAtUtc);
     }
 }
@@ -226,7 +232,7 @@ public sealed class SearchAppointmentsQueryHandler(
         return new AppointmentDto(
             i.Id, i.PatientId, patient?.PatientNumber ?? string.Empty, patient?.FullName ?? string.Empty,
             i.ClinicType, i.Type, i.Status, i.ScheduledAtUtc, i.DurationMinutes,
-            i.Reason, i.RecurrenceGroupId, i.RecurrencePattern,
+            i.Reason, i.PreviousConsultationId, i.RecurrenceGroupId, i.RecurrencePattern,
             i.CreatedByUserId, i.CreatedAtUtc, i.ConsultationId, i.StartedAtUtc, i.CompletedAtUtc);
     }
 }
@@ -248,7 +254,7 @@ public sealed class GetAppointmentsByMonthQueryHandler(
             return new AppointmentDto(
                 i.Id, i.PatientId, patient?.PatientNumber ?? string.Empty, patient?.FullName ?? string.Empty,
                 i.ClinicType, i.Type, i.Status, i.ScheduledAtUtc, i.DurationMinutes,
-                i.Reason, i.RecurrenceGroupId, i.RecurrencePattern,
+                i.Reason, i.PreviousConsultationId, i.RecurrenceGroupId, i.RecurrencePattern,
                 i.CreatedByUserId, i.CreatedAtUtc, i.ConsultationId, i.StartedAtUtc, i.CompletedAtUtc);
         }).ToArray();
     }

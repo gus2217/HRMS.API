@@ -14,8 +14,8 @@ public sealed class Appointment : AggregateRoot<Guid>
     private Appointment(
         Guid id, FacilityId facilityId, Guid patientId, string clinicType,
         AppointmentType type, DateTime scheduledAtUtc, int durationMinutes,
-        string? reason, Guid? recurrenceGroupId, RecurrencePattern recurrencePattern,
-        Guid createdByUserId, DateTime createdAtUtc)
+        string? reason, Guid? previousConsultationId, Guid? recurrenceGroupId,
+        RecurrencePattern recurrencePattern, Guid createdByUserId, DateTime createdAtUtc)
         : base(id)
     {
         FacilityId = facilityId;
@@ -25,6 +25,7 @@ public sealed class Appointment : AggregateRoot<Guid>
         ScheduledAtUtc = scheduledAtUtc;
         DurationMinutes = durationMinutes;
         Reason = reason;
+        PreviousConsultationId = previousConsultationId;
         RecurrenceGroupId = recurrenceGroupId;
         RecurrencePattern = recurrencePattern;
         CreatedByUserId = createdByUserId;
@@ -40,6 +41,12 @@ public sealed class Appointment : AggregateRoot<Guid>
     public DateTime ScheduledAtUtc { get; private set; }
     public int DurationMinutes { get; private set; }
     public string? Reason { get; private set; }
+    /// <summary>
+    /// The prior consultation this follow-up/check-up continues. Carried into the
+    /// consultation when the appointment is started so the visit stays in the
+    /// same episode of care and prior diagnoses can be carried forward.
+    /// </summary>
+    public Guid? PreviousConsultationId { get; private set; }
     public Guid? RecurrenceGroupId { get; private set; }
     public RecurrencePattern RecurrencePattern { get; private set; }
     public Guid CreatedByUserId { get; private set; }
@@ -51,8 +58,8 @@ public sealed class Appointment : AggregateRoot<Guid>
     public static Result<Appointment> Create(
         Guid id, FacilityId facilityId, Guid patientId, string clinicType,
         AppointmentType type, DateTime scheduledAtUtc, int durationMinutes,
-        string? reason, Guid? recurrenceGroupId, RecurrencePattern recurrencePattern,
-        Guid createdByUserId, DateTime createdAtUtc)
+        string? reason, Guid? previousConsultationId, Guid? recurrenceGroupId,
+        RecurrencePattern recurrencePattern, Guid createdByUserId, DateTime createdAtUtc)
     {
         if (patientId == Guid.Empty) return Error.Validation("Patient is required.");
         if (string.IsNullOrWhiteSpace(clinicType)) return Error.Validation("Clinic is required.");
@@ -63,6 +70,7 @@ public sealed class Appointment : AggregateRoot<Guid>
         return new Appointment(id, facilityId, patientId, clinicType.Trim(), type,
             scheduledAtUtc, durationMinutes,
             string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(),
+            previousConsultationId,
             recurrenceGroupId, recurrencePattern, createdByUserId, createdAtUtc);
     }
 

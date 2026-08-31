@@ -40,6 +40,12 @@ public sealed class Consultation : AggregateRoot<Guid>
     public ConsultationSource Source { get; private set; }
     /// <summary>Links back to the queue entry / appointment that spawned this visit.</summary>
     public Guid? SourceReferenceId { get; private set; }
+    /// <summary>
+    /// Links a follow-up/check-up visit back to the consultation it continues.
+    /// This is the episode-of-care chain — each follow-up is a fresh, complete
+    /// encounter but knows its index visit so prior diagnoses can be carried forward.
+    /// </summary>
+    public Guid? PreviousConsultationId { get; private set; }
 
     public IReadOnlyCollection<Diagnosis> Diagnoses => _diagnoses.AsReadOnly();
     public IReadOnlyCollection<ClinicalNote> Notes => _notes.AsReadOnly();
@@ -48,12 +54,16 @@ public sealed class Consultation : AggregateRoot<Guid>
     public IReadOnlyCollection<Referral> Referrals => _referrals.AsReadOnly();
     public ClinicalDocumentation? Documentation => _documentation;
 
-    /// <summary>Legal forward transitions in the 7-step workflow.</summary>
+    /// <summary>
+    /// Legal forward transitions. Triage is optional — a clinician may start a
+    /// Registered consultation directly (skip vitals) via <see cref="BeginClinicalPhase"/>,
+    /// while a nurse can still record triage first (Registered → Triaged).
+    /// </summary>
     private static readonly IReadOnlyDictionary<ConsultationStatus, ConsultationStatus[]> Transitions =
         new Dictionary<ConsultationStatus, ConsultationStatus[]>
         {
-            [ConsultationStatus.Registered] = [ConsultationStatus.Triaged],
-            [ConsultationStatus.Triaged] = [ConsultationStatus.AwaitingClinician],
+            [ConsultationStatus.Registered] = [ConsultationStatus.Triaged, ConsultationStatus.InConsultation],
+            [ConsultationStatus.Triaged] = [ConsultationStatus.AwaitingClinician, ConsultationStatus.InConsultation],
             [ConsultationStatus.AwaitingClinician] = [ConsultationStatus.InConsultation],
             [ConsultationStatus.InConsultation] =
                 [ConsultationStatus.AwaitingLabResults, ConsultationStatus.DiagnosisRecorded],
@@ -78,6 +88,12 @@ public sealed class Consultation : AggregateRoot<Guid>
         SourceReferenceId = sourceReferenceId;
     }
 
+    /// <summary>Marks this visit as a follow-up of an earlier consultation.</summary>
+    public void SetPreviousConsultation(Guid previousConsultationId)
+    {
+        PreviousConsultationId = previousConsultationId;
+    }
+
     public Result RecordTriage(TriageData triage)
     {
         if (Status != ConsultationStatus.Registered)
@@ -88,21 +104,27 @@ public sealed class Consultation : AggregateRoot<Guid>
     }
 
     /// <summary>
-    /// Moves a triaged consultation into the clinical phase (Triaged → AwaitingClinician
-    /// → InConsultation) so diagnosis/complete become reachable. Guards each hop.
+    /// Moves the consultation into active clinical work (→ InConsultation) so
+    /// diagnosis/complete become reachable. A clinician may start straight from
+    /// Registered (skipping triage) or advance a Triaged/AwaitingClinician visit.
+    /// Idempotent once clinical work is already underway.
     /// </summary>
     public Result BeginClinicalPhase()
     {
-        if (Status == ConsultationStatus.Triaged)
-            AdvanceTo(ConsultationStatus.AwaitingClinician);
+        if (Status == ConsultationStatus.Completed)
+            return Error.InvalidOperation("Cannot start a completed consultation.");
 
-        if (Status == ConsultationStatus.AwaitingClinician)
+        if (Status is ConsultationStatus.Registered
+            or ConsultationStatus.Triaged
+            or ConsultationStatus.AwaitingClinician)
             AdvanceTo(ConsultationStatus.InConsultation);
 
-        if (Status != ConsultationStatus.InConsultation)
-            return Error.InvalidOperation($"Cannot begin clinical phase in status {Status}.");
+        if (Status is ConsultationStatus.InConsultation
+            or ConsultationStatus.AwaitingLabResults
+            or ConsultationStatus.DiagnosisRecorded)
+            return Result.Success();
 
-        return Result.Success();
+        return Error.InvalidOperation($"Cannot begin clinical phase in status {Status}.");
     }
 
     public Result RecordDiagnosis(string icdCode, string description, bool isPrimary)

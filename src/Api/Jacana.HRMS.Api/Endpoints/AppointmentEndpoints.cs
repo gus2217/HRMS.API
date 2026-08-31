@@ -59,8 +59,8 @@ public static class AppointmentEndpoints
     {
         var result = await sender.Send(new CreateAppointmentCommand(
             request.PatientId, request.ClinicType, request.Type, request.ScheduledAtUtc,
-            request.DurationMinutes, request.Reason, request.RecurrencePattern,
-            request.RecurrenceCount, request.RecurrenceEndDate), ct);
+            request.DurationMinutes, request.Reason, request.PreviousConsultationId,
+            request.RecurrencePattern, request.RecurrenceCount, request.RecurrenceEndDate), ct);
         return result.IsSuccess
             ? Results.Created($"/api/v1/appointments", result.Value)
             : MapError(result.Error);
@@ -129,7 +129,7 @@ public static class AppointmentEndpoints
         Guid id, ApproveAppointmentRequestRequestDto request, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new ApproveAppointmentRequestCommand(
-            id, request.ScheduledAtUtc, request.DurationMinutes, request.Type), ct);
+            id, request.ScheduledAtUtc, request.DurationMinutes, request.Type, request.PreviousConsultationId), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 
