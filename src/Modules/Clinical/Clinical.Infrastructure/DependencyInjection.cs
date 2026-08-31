@@ -20,6 +20,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, DbContextUnitOfWork<ClinicalDbContext>>();
         services.AddScoped<IConsultationRepository, ConsultationRepository>();
+        services.AddScoped<IQueueEntryRepository, QueueEntryRepository>();
 
         return services;
     }

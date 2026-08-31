@@ -22,6 +22,9 @@ public static class PatientEndpoints
         group.MapGet("/{id:guid}", GetAsync)
             .RequireAuthorization(Permissions.Patients.View);
 
+        group.MapGet("/check", CheckDuplicatesAsync)
+            .RequireAuthorization(Permissions.Patients.Register);
+
         group.MapGet("/", SearchAsync)
             .RequireAuthorization(Permissions.Patients.View);
 
@@ -65,6 +68,13 @@ public static class PatientEndpoints
         string? search, ISender sender, CancellationToken ct, string? sort = null, int pageNumber = 1, int pageSize = 50)
     {
         var result = await sender.Send(new SearchPatientsQuery(search, pageNumber, pageSize, sort), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> CheckDuplicatesAsync(
+        string? phone, string? nationalId, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new CheckPatientDuplicatesQuery(phone, nationalId), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

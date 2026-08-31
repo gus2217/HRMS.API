@@ -148,3 +148,31 @@ public sealed class ReferralConfiguration : IEntityTypeConfiguration<Referral>
         builder.Property(r => r.ReferredAtUtc).IsRequired();
     }
 }
+
+public sealed class QueueEntryConfiguration : IEntityTypeConfiguration<QueueEntry>
+{
+    public void Configure(EntityTypeBuilder<QueueEntry> builder)
+    {
+        builder.ToTable("queue_entries");
+        builder.HasKey(q => q.Id);
+
+        builder.Property(q => q.PatientId).IsRequired();
+        builder.Property(q => q.ClinicType).HasMaxLength(64).IsRequired();
+        builder.Property(q => q.Priority).HasConversion<string>().HasMaxLength(16);
+        builder.Property(q => q.Status).HasConversion<string>().HasMaxLength(16);
+        builder.Property(q => q.QueueNumber).HasMaxLength(16).IsRequired();
+        builder.Property(q => q.Notes).HasMaxLength(500);
+        builder.Property(q => q.RequestedByUserId).IsRequired();
+        builder.Property(q => q.RequestedAtUtc).IsRequired();
+        builder.Property(q => q.AcceptedByUserId);
+        builder.Property(q => q.AcceptedAtUtc);
+        builder.Property(q => q.ConsultationId);
+
+        builder.ComplexProperty(q => q.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
+        builder.Property(q => q.RowVersion).IsConcurrencyToken();
+
+        // Queue board queries filter by clinic/status and order by priority + time.
+        builder.HasIndex(q => new { q.ClinicType, q.Status });
+        builder.HasIndex(q => q.ConsultationId).IsUnique();
+    }
+}

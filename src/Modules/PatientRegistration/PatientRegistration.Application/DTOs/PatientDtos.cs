@@ -45,4 +45,5 @@ public sealed record DuplicateCandidateDto(
     string PatientNumber,
     string FullName,
     DateOnly DateOfBirth,
+    string? Phone,
     string? NationalId);

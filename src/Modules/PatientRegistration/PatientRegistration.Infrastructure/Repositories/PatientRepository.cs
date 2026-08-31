@@ -2,6 +2,7 @@ using Jacana.PatientRegistration.Application.Abstractions;
 using Jacana.PatientRegistration.Application.DTOs;
 using Jacana.PatientRegistration.Domain;
 using Jacana.PatientRegistration.Infrastructure.Persistence;
+using Jacana.SharedKernel.Domain;
 using Microsoft.EntityFrameworkCore;
 using Jacana.SharedKernel.Infrastructure.Persistence;
 
@@ -81,5 +82,39 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
             p.Allergies.Select(a => new AllergyDto(a.Substance, a.Severity.ToString(), a.Notes)).ToArray(),
             p.Consents.Select(c => new ConsentDto(c.Type.ToString(), c.Granted, c.RecordedAtUtc)).ToArray(),
             p.NextOfKin.Select(k => new NextOfKinDto(k.FullName, k.Relationship, k.Phone.Value)).ToArray());
+    }
+
+    public async Task<IReadOnlyList<Patient>> FindByPhoneOrNationalIdAsync(
+        FacilityId facilityId, string? phone, string? nationalId, CancellationToken ct = default)
+    {
+        var query = db.Patients.AsNoTracking()
+            .Where(p => p.FacilityId.Value == facilityId.Value);
+
+        var candidates = new List<Patient>();
+
+        // Exact phone match (normalised value) — high confidence.
+        if (!string.IsNullOrWhiteSpace(phone))
+        {
+            var phoneValue = phone.Trim();
+            candidates.AddRange(await query
+                .Where(p => p.Phone.Value == phoneValue)
+                .ToListAsync(ct));
+        }
+
+        // Exact NationalId match — in-memory equality (encrypted at rest).
+        if (!string.IsNullOrWhiteSpace(nationalId))
+        {
+            var withNational = await query
+                .Where(p => p.NationalId != null)
+                .ToListAsync(ct);
+            var parsed = NationalId.Create(nationalId.Trim());
+            if (parsed.IsSuccess)
+                candidates.AddRange(withNational.Where(p => p.NationalId!.Value == parsed.Value.Value));
+        }
+
+        return candidates
+            .GroupBy(p => p.Id)
+            .Select(g => g.First())
+            .ToList();
     }
 }

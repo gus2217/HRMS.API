@@ -33,6 +33,7 @@ public static class PermissionPolicies
         Permissions.Clinical.Consult, Permissions.Clinical.RecordDiagnosis, Permissions.Clinical.View,
         Permissions.Lab.Order, Permissions.Lab.RecordResult,
         Permissions.Pharmacy.Dispense,
-        Permissions.Inventory.Receive, Permissions.Inventory.Adjust
+        Permissions.Inventory.Receive, Permissions.Inventory.Adjust,
+        Permissions.Queue.Create, Permissions.Queue.View, Permissions.Queue.Accept
     ];
 }

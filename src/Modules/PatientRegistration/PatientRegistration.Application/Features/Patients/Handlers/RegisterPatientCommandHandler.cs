@@ -36,14 +36,15 @@ public sealed class RegisterPatientCommandHandler(
 
         // Duplicate detection → return candidates for confirmation, never silent merge.
         var candidates = await duplicates.FindDuplicatesAsync(
-            currentUser.FacilityId, request.FirstName, request.LastName, request.DateOfBirth, nationalId, ct);
+            currentUser.FacilityId, request.FirstName, request.LastName,
+            request.DateOfBirth, phoneResult.Value, nationalId, ct);
 
         if (candidates.Count > 0)
         {
             return new RegisterPatientResponseDto(Guid.Empty, string.Empty,
                 candidates.Select(c => new DuplicateCandidateDto(
                     c.Id, c.PatientNumber, $"{c.FirstName} {c.LastName}", c.DateOfBirth,
-                    c.NationalId?.Value)).ToArray());
+                    c.Phone.Value, c.NationalId?.Value)).ToArray());
         }
 
         var patientNumber = await numberGenerator.NextAsync(currentUser.FacilityId, ct);

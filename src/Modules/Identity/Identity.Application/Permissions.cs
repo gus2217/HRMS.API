@@ -48,6 +48,16 @@ public static class Permissions
         public const string View = "Clinical.View";
     }
 
+    public static class Queue
+    {
+        /// <summary>Reception queues patients for consultations.</summary>
+        public const string Create = "Queue.Create";
+        /// <summary>View the consultation queue board.</summary>
+        public const string View = "Queue.View";
+        /// <summary>Accept queue entries and register the consultation.</summary>
+        public const string Accept = "Queue.Accept";
+    }
+
     public static class Lab
     {
         public const string Order = "Laboratory.Order";
