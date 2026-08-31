@@ -24,7 +24,7 @@ public sealed class CreateDrugCommandHandler(
         await drugs.AddAsync(drug.Value, ct);
 
         return new DrugCatalogDto(drug.Value.Id, drug.Value.Code, drug.Value.Name,
-            drug.Value.Form, drug.Value.UnitPrice.Amount, drug.Value.ReorderLevel, drug.Value.Status.ToString());
+            drug.Value.Form, drug.Value.UnitPrice.Amount, drug.Value.ReorderLevel, drug.Value.Status.ToString(), 0);
     }
 }
 

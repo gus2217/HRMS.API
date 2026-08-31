@@ -35,13 +35,17 @@ public sealed class DrugRepository(InventoryDbContext db) : IDrugRepository
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(d => d.Name.Contains(search) || d.Code.Contains(search));
 
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var total = await query.CountAsync(ct);
         var items = await query
             .OrderBy(d => d.Name)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(d => new DrugCatalogDto(
-                d.Id, d.Code, d.Name, d.Form, d.UnitPrice.Amount, d.ReorderLevel, d.Status.ToString()))
+                d.Id, d.Code, d.Name, d.Form, d.UnitPrice.Amount, d.ReorderLevel, d.Status.ToString(),
+                db.StockBatches
+                    .Where(b => b.DrugId == d.Id && b.QuantityOnHand > 0 && b.ExpiryDate >= today)
+                    .Sum(b => b.QuantityOnHand)))
             .ToListAsync(ct);
 
         return new PagedResult<DrugCatalogDto>(items, total, pageNumber, pageSize);

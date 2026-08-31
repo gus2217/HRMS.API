@@ -113,11 +113,43 @@ public sealed class ConsultationCompletedBillingHandler(
         var fee = Money.Create(options.Value.ConsultationFee);
         if (fee.IsFailure) return;
 
-        invoice.AddLine("CONSULT", "Consultation fee", 1, fee.Value);
+        // Idempotent: the fee is already on the draft (added at consultation start);
+        // only add it here as a fallback for consultations started before that hook.
+        AutoBilling.AddLineIfMissing(invoice, "CONSULT", "Consultation fee", 1, fee.Value);
 
         // Issue the accumulated bill so cashiers/receptionists can confirm payment.
         invoice.Issue();
         await invoices.UpdateAsync(invoice, ct); // marks client-keyed new lines Added (phantom-UPDATE fix)
+        await AutoBilling.CommitAsync(unitsOfWork, ct);
+        invoices.Detach(invoice);
+    }
+}
+
+/// <summary>
+/// Opens the patient's draft invoice the moment the consultation enters clinical
+/// work — the doctor sees a running bill immediately, not only at completion.
+/// </summary>
+public sealed class ConsultationStartedBillingHandler(
+    IInvoiceRepository invoices,
+    IEnumerable<IUnitOfWork> unitsOfWork,
+    IOptions<BillingFeeOptions> options)
+    : INotificationHandler<DomainEventNotification<ConsultationStartedDomainEvent>>
+{
+    public async Task Handle(
+        DomainEventNotification<ConsultationStartedDomainEvent> notification, CancellationToken ct)
+    {
+        var e = notification.DomainEvent;
+
+        var invoice = await AutoBilling.FindOrCreateDraftAsync(
+            invoices, e.FacilityId, e.PatientId, e.ConsultationId, ct);
+        if (invoice is null) return;
+
+        var fee = Money.Create(options.Value.ConsultationFee);
+        if (fee.IsFailure) return;
+
+        AutoBilling.AddLineIfMissing(invoice, "CONSULT", "Consultation fee", 1, fee.Value);
+
+        await invoices.UpdateAsync(invoice, ct);
         await AutoBilling.CommitAsync(unitsOfWork, ct);
         invoices.Detach(invoice);
     }
@@ -146,6 +178,17 @@ internal static class AutoBilling
 
         await invoices.AddAsync(created.Value, ct);
         return created.Value;
+    }
+
+    /// <summary>
+    /// Adds a line only if no line with the same service code already exists.
+    /// Keeps the auto-billing handlers idempotent across a consultation's lifetime.
+    /// </summary>
+    public static void AddLineIfMissing(Invoice invoice, string serviceCode, string description, int quantity, Money unitPrice)
+    {
+        if (invoice.Lines.Any(l => l.ServiceCode == serviceCode))
+            return;
+        invoice.AddLine(serviceCode, description, quantity, unitPrice);
     }
 
     /// <summary>

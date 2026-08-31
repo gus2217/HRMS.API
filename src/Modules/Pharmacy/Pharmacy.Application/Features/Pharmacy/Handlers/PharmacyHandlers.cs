@@ -10,6 +10,8 @@ namespace Jacana.Pharmacy.Application.Features.Pharmacy.Handlers;
 
 public sealed class CreatePrescriptionCommandHandler(
     IPrescriptionRepository prescriptions,
+    Jacana.Inventory.Domain.IInventoryStockQuery stockQuery,
+    Jacana.Inventory.Domain.IInventoryPricingQuery pricing,
     ICurrentUser currentUser,
     IClock clock)
     : IRequestHandler<CreatePrescriptionCommand, Result<PrescriptionDetailDto>>
@@ -23,6 +25,19 @@ public sealed class CreatePrescriptionCommandHandler(
 
         foreach (var item in request.Items)
         {
+            // Elite prescribe guard: a drug must exist in the catalog AND have
+            // usable (non-expired) stock; the prescribed quantity may not exceed it.
+            var price = await pricing.GetPriceAsync(item.DrugId, ct);
+            if (price is null)
+                return Error.InvalidOperation("The selected drug is not in the inventory catalog.");
+
+            var available = await stockQuery.GetAvailableQuantityAsync(item.DrugId, ct);
+            if (available <= 0)
+                return Error.InvalidOperation($"{price.Name} is out of stock.");
+            if (item.QuantityPrescribed > available)
+                return Error.InvalidOperation(
+                    $"Cannot prescribe {item.QuantityPrescribed} of {price.Name} — only {available} in stock.");
+
             var add = prescription.Value.AddItem(item.DrugId, item.DosageInstructions, item.QuantityPrescribed);
             if (add.IsFailure) return add.Error;
         }
@@ -39,6 +54,7 @@ public sealed class DispenseMedicationCommandHandler(
     IPrescriptionRepository prescriptions,
     IDispenseRecordRepository dispenseRecords,
     Jacana.Inventory.Domain.IInventoryStockQuery stockQuery,
+    Jacana.Inventory.Domain.IInventoryStockService stockService,
     ICurrentUser currentUser,
     IClock clock)
     : IRequestHandler<DispenseMedicationCommand, Result<DispenseMedicationResponseDto>>
@@ -66,6 +82,13 @@ public sealed class DispenseMedicationCommandHandler(
             Guid.NewGuid(), currentUser.FacilityId, request.PrescriptionItemId,
             request.Quantity, currentUser.UserId, clock.UtcNow);
         if (record.IsFailure) return record.Error;
+
+        // Physically deduct the dispensed quantity from inventory (FEFO). Untracked
+        // drugs with no usable batches have nothing to deduct — the deduction is a
+        // no-op in that case (returns success with zero batches touched).
+        var deduction = await stockService.DeductAsync(
+            item.DrugId, request.Quantity, $"Rx-{prescription.Id}", currentUser.UserId, clock.UtcNow, ct);
+        if (deduction.IsFailure) return deduction.Error;
 
         await prescriptions.UpdateAsync(prescription, ct);
         await dispenseRecords.AddAsync(record.Value, ct);

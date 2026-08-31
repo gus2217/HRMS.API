@@ -114,10 +114,16 @@ public sealed class Consultation : AggregateRoot<Guid>
         if (Status == ConsultationStatus.Completed)
             return Error.InvalidOperation("Cannot start a completed consultation.");
 
-        if (Status is ConsultationStatus.Registered
+        var entering = Status is ConsultationStatus.Registered
             or ConsultationStatus.Triaged
-            or ConsultationStatus.AwaitingClinician)
+            or ConsultationStatus.AwaitingClinician;
+
+        if (entering)
+        {
             AdvanceTo(ConsultationStatus.InConsultation);
+            // Open the patient's draft bill the moment the visit starts.
+            AddDomainEvent(new ConsultationStartedDomainEvent(Id, FacilityId.Value, PatientId, StartedAtUtc));
+        }
 
         if (Status is ConsultationStatus.InConsultation
             or ConsultationStatus.AwaitingLabResults

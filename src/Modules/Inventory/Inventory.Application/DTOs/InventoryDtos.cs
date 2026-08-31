@@ -7,7 +7,8 @@ public sealed record DrugCatalogDto(
     string Form,
     decimal UnitPrice,
     int ReorderLevel,
-    string Status);
+    string Status,
+    int AvailableQuantity);
 
 public sealed record StockLevelDto(
     Guid DrugId,
