@@ -73,6 +73,13 @@ public sealed class ApproveAppointmentRequestCommandHandler(
         if (!Enum.TryParse<AppointmentType>(request.Type, true, out var type))
             return Error.Validation($"Unknown appointment type '{request.Type}'.");
 
+        // Double-booking guard: no overlapping active appointment in this clinic.
+        var fromUtc = request.ScheduledAtUtc;
+        var toUtc = request.ScheduledAtUtc.AddMinutes(request.DurationMinutes);
+        if (await appointments.HasOverlapAsync(entry.ClinicType, fromUtc, toUtc, ct))
+            return Error.InvalidOperation(
+                $"{entry.ClinicType} is already booked for {request.ScheduledAtUtc:HH:mm}.");
+
         var appt = Appointment.Create(
             Guid.NewGuid(), currentUser.FacilityId, entry.PatientId, entry.ClinicType,
             type, request.ScheduledAtUtc, request.DurationMinutes, entry.Reason,

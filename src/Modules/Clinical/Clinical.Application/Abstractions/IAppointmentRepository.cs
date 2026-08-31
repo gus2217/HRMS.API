@@ -26,4 +26,11 @@ public interface IAppointmentRepository
     /// <summary>All appointments for a patient (medical record), newest first.</summary>
     Task<IReadOnlyList<AppointmentSummaryDto>> GetByPatientAsync(
         Guid patientId, CancellationToken ct = default);
+
+    /// <summary>
+    /// True when an active appointment (Scheduled/InProgress) in the clinic
+    /// overlaps the given time window — the double-booking guard.
+    /// </summary>
+    Task<bool> HasOverlapAsync(
+        string clinicType, DateTime fromUtc, DateTime toUtc, CancellationToken ct = default);
 }

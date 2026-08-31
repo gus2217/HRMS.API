@@ -90,6 +90,15 @@ public sealed class AppointmentRepository(ClinicalDbContext db) : IAppointmentRe
             .ToListAsync(ct);
     }
 
+    public Task<bool> HasOverlapAsync(
+        string clinicType, DateTime fromUtc, DateTime toUtc, CancellationToken ct = default)
+        => db.Appointments.AsNoTracking()
+            .AnyAsync(a =>
+                a.ClinicType == clinicType
+                && (a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.InProgress)
+                && a.ScheduledAtUtc < toUtc
+                && a.ScheduledAtUtc.AddMinutes(a.DurationMinutes) > fromUtc, ct);
+
     private static AppointmentSummaryDto Map(Appointment a) => new(
         a.Id, a.PatientId, a.ClinicType, a.Type.ToString(), a.Status.ToString(),
         a.ScheduledAtUtc, a.DurationMinutes, a.Reason, a.RecurrenceGroupId,

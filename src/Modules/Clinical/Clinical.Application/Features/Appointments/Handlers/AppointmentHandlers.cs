@@ -39,6 +39,13 @@ public sealed class CreateAppointmentCommandHandler(
                 && DateOnly.FromDateTime(scheduledAt) > request.RecurrenceEndDate)
                 break;
 
+            // Double-booking guard: no overlapping active appointment in this clinic.
+            var fromUtc = scheduledAt;
+            var toUtc = scheduledAt.AddMinutes(request.DurationMinutes);
+            if (await appointments.HasOverlapAsync(request.ClinicType, fromUtc, toUtc, ct))
+                return Error.InvalidOperation(
+                    $"{request.ClinicType} is already booked for {scheduledAt:HH:mm} ({(i == 0 ? "" : $"occurrence {i + 1}, ")}conflict with an existing appointment).");
+
             var appt = Appointment.Create(
                 Guid.NewGuid(), currentUser.FacilityId, request.PatientId, request.ClinicType,
                 type, scheduledAt, request.DurationMinutes, request.Reason,
