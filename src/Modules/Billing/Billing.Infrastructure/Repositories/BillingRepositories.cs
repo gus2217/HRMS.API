@@ -85,7 +85,7 @@ public sealed class InvoiceRepository(BillingDbContext db) : IInvoiceRepository
             i.PrimaryPaymentMethod?.ToString(), i.CreatedAtUtc,
             i.Lines.Select(l => new InvoiceLineDto(
                 l.Id, l.ServiceCode, l.Description, l.Quantity,
-                l.UnitPrice.Amount, l.LineTotal.Amount)).ToArray());
+                l.UnitPrice.Amount, l.LineTotal.Amount, l.Status.ToString())).ToArray());
     }
 }
 

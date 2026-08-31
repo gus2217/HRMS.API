@@ -7,6 +7,7 @@ namespace Jacana.Inventory.Application.Features.Inventory;
 public sealed record CreateDrugCommand(
     string Code,
     string Name,
+    string Category,
     string Form,
     decimal UnitPrice,
     int ReorderLevel)

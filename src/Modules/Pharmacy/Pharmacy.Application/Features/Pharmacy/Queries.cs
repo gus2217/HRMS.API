@@ -13,3 +13,7 @@ public sealed record GetPrescriptionsByConsultationQuery(Guid ConsultationId)
 
 public sealed record SearchPrescriptionsQuery(int PageNumber, int PageSize, string? Status = null, Guid? PatientId = null)
     : IQuery<Result<PagedResult<PrescriptionListItemDto>>>;
+
+/// <summary>Reserved (pending) quantities per drug, for the prescribing UI.</summary>
+public sealed record GetReservationsQuery()
+    : IQuery<Result<IReadOnlyList<DrugReservationDto>>>;

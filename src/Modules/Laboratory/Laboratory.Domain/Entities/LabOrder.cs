@@ -67,12 +67,19 @@ public sealed class LabOrder : AggregateRoot<Guid>
         var test = _tests.FirstOrDefault(t => t.Id == testItemId);
         if (test is null) return Error.NotFound("Lab test not found.");
 
+        var wasCompleted = Status == LabOrderStatus.Completed;
+
         var result = test.RecordResult(resultValue, resultUnit, referenceRange, isAbnormal,
             resultedByUserId, resultedAtUtc);
         if (result.IsFailure) return result.Error;
 
         RecomputeStatus();
         AddDomainEvent(new LabResultRecordedDomainEvent(Id, PatientId, testItemId, resultedAtUtc));
+
+        // Charge the order's bill the moment its final test is resulted.
+        if (!wasCompleted && Status == LabOrderStatus.Completed)
+            AddDomainEvent(new LabOrderCompletedDomainEvent(Id, ConsultationId, resultedAtUtc));
+
         return Result.Success();
     }
 

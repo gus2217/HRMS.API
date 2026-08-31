@@ -10,7 +10,13 @@ public sealed record CreatePrescriptionCommand(
     IReadOnlyList<PrescriptionItemInput> Items)
     : ICommand<Result<PrescriptionDetailDto>>;
 
-public sealed record PrescriptionItemInput(Guid DrugId, string DosageInstructions, int QuantityPrescribed);
+public sealed record PrescriptionItemInput(
+    Guid DrugId,
+    string DosageInstructions,
+    string Route,
+    string Frequency,
+    int? DurationDays,
+    int QuantityPrescribed);
 
 public sealed record DispenseMedicationCommand(
     Guid PrescriptionId,

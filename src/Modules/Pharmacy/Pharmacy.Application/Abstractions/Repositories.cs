@@ -13,6 +13,15 @@ public interface IPrescriptionRepository
     Task<IReadOnlyList<PrescriptionSummaryDto>> SearchAsync(
         string? status, Guid? patientId, int pageNumber, int pageSize, CancellationToken ct = default);
     Task<int> CountAsync(string? status, Guid? patientId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Quantity of a drug already committed to active (un-dispensed) prescription
+    /// items. Prescribers must not over-commit beyond physical stock minus this.
+    /// </summary>
+    Task<int> GetReservedQuantityAsync(Guid drugId, CancellationToken ct = default);
+
+    /// <summary>Reserved quantity per drug (all active prescriptions, batch).</summary>
+    Task<IReadOnlyDictionary<Guid, int>> GetReservedQuantitiesAsync(CancellationToken ct = default);
 }
 
 public interface IDispenseRecordRepository

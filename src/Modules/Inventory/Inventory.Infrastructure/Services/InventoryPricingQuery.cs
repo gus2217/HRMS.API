@@ -18,6 +18,20 @@ public sealed class InventoryPricingQuery(InventoryDbContext db) : IInventoryPri
 
         return drug is null
             ? null
-            : new DrugPriceInfo(drug.Id, drug.Code, drug.Name, drug.UnitPrice.Amount);
+            : new DrugPriceInfo(drug.Id, drug.Code, drug.Name, drug.Category, drug.Form, drug.UnitPrice.Amount);
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, DrugPriceInfo>> GetPricesAsync(
+        IReadOnlyCollection<Guid> drugIds, CancellationToken ct = default)
+    {
+        if (drugIds.Count == 0) return new Dictionary<Guid, DrugPriceInfo>();
+
+        var drugs = await db.Drugs.AsNoTracking()
+            .Where(d => drugIds.Contains(d.Id))
+            .ToListAsync(ct);
+
+        return drugs.ToDictionary(
+            d => d.Id,
+            d => new DrugPriceInfo(d.Id, d.Code, d.Name, d.Category, d.Form, d.UnitPrice.Amount));
     }
 }

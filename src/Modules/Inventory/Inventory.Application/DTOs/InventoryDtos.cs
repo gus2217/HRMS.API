@@ -4,6 +4,7 @@ public sealed record DrugCatalogDto(
     Guid Id,
     string Code,
     string Name,
+    string Category,
     string Form,
     decimal UnitPrice,
     int ReorderLevel,

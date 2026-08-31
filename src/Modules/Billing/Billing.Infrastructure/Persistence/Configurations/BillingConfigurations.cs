@@ -36,6 +36,9 @@ public sealed class InvoiceLineConfiguration : IEntityTypeConfiguration<InvoiceL
         builder.Property(l => l.ServiceCode).HasMaxLength(64).IsRequired();
         builder.Property(l => l.Description).HasMaxLength(300).IsRequired();
         builder.Property(l => l.Quantity).IsRequired();
+        builder.Property(l => l.SourceType).HasMaxLength(32);
+        builder.Property(l => l.SourceReferenceId);
+        builder.Property(l => l.Status).HasConversion<string>().HasMaxLength(16);
         builder.ComplexProperty(l => l.UnitPrice, m =>
         {
             m.Property(x => x.Amount).HasColumnName("UnitPrice").HasPrecision(18, 2);

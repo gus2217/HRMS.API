@@ -7,6 +7,12 @@ public sealed record CreatePrescriptionRequestDto(
     Guid ConsultationId,
     IReadOnlyList<PrescriptionItemRequestDto> Items);
 
-public sealed record PrescriptionItemRequestDto(Guid DrugId, string DosageInstructions, int QuantityPrescribed);
+public sealed record PrescriptionItemRequestDto(
+    Guid DrugId,
+    string DosageInstructions,
+    string Route,
+    string Frequency,
+    int? DurationDays,
+    int QuantityPrescribed);
 
 public sealed record DispenseMedicationRequestDto(Guid PrescriptionId, Guid PrescriptionItemId, int Quantity);

@@ -34,11 +34,21 @@ public sealed class CreatePrescriptionCommandHandler(
             var available = await stockQuery.GetAvailableQuantityAsync(item.DrugId, ct);
             if (available <= 0)
                 return Error.InvalidOperation($"{price.Name} is out of stock.");
-            if (item.QuantityPrescribed > available)
-                return Error.InvalidOperation(
-                    $"Cannot prescribe {item.QuantityPrescribed} of {price.Name} — only {available} in stock.");
 
-            var add = prescription.Value.AddItem(item.DrugId, item.DosageInstructions, item.QuantityPrescribed);
+            // Reservation: pending (un-dispensed) prescriptions already commit stock,
+            // so the effective amount a new prescription may draw is reduced by them.
+            var reserved = await prescriptions.GetReservedQuantityAsync(item.DrugId, ct);
+            var effective = available - reserved;
+            if (effective <= 0)
+                return Error.InvalidOperation(
+                    $"{price.Name} is fully reserved by pending prescriptions ({reserved} on order).");
+            if (item.QuantityPrescribed > effective)
+                return Error.InvalidOperation(
+                    $"Cannot prescribe {item.QuantityPrescribed} of {price.Name} — only {effective} available ({reserved} already reserved by pending prescriptions).");
+
+            var add = prescription.Value.AddItem(
+                item.DrugId, item.DosageInstructions, item.Route, item.Frequency,
+                item.DurationDays, item.QuantityPrescribed);
             if (add.IsFailure) return add.Error;
         }
 
@@ -145,5 +155,18 @@ public sealed class SearchPrescriptionsQueryHandler(
 
         return Result.Success(new PagedResult<PrescriptionListItemDto>(
             rows, total, request.PageNumber, request.PageSize));
+    }
+}
+
+/// <summary>Reserved (pending) quantities per drug — powers the prescribing UI.</summary>
+public sealed class GetReservationsQueryHandler(IPrescriptionRepository prescriptions)
+    : IRequestHandler<GetReservationsQuery, Result<IReadOnlyList<DrugReservationDto>>>
+{
+    public async Task<Result<IReadOnlyList<DrugReservationDto>>> Handle(
+        GetReservationsQuery request, CancellationToken ct)
+    {
+        var reserved = await prescriptions.GetReservedQuantitiesAsync(ct);
+        return Result.Success<IReadOnlyList<DrugReservationDto>>(
+            reserved.Select(kv => new DrugReservationDto(kv.Key, kv.Value)).ToArray());
     }
 }

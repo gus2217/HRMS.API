@@ -13,6 +13,9 @@ public sealed class CreatePrescriptionCommandValidator : AbstractValidator<Creat
         {
             item.RuleFor(i => i.DrugId).NotEmpty();
             item.RuleFor(i => i.DosageInstructions).NotEmpty().MaximumLength(500);
+            item.RuleFor(i => i.Route).NotEmpty().MaximumLength(50);
+            item.RuleFor(i => i.Frequency).MaximumLength(50);
+            item.RuleFor(i => i.DurationDays).GreaterThan(0).When(i => i.DurationDays.HasValue);
             item.RuleFor(i => i.QuantityPrescribed).GreaterThan(0);
         });
     }

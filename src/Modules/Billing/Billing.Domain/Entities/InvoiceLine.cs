@@ -11,27 +11,42 @@ public sealed class InvoiceLine : Entity<Guid>
 {
     private InvoiceLine() { } // EF
 
-    internal InvoiceLine(Guid id, string serviceCode, string description, int quantity, Money unitPrice)
+    internal InvoiceLine(Guid id, string serviceCode, string description, int quantity, Money unitPrice,
+        string sourceType, Guid? sourceReferenceId)
         : base(id)
     {
         ServiceCode = serviceCode;
         Description = description;
         Quantity = quantity;
         UnitPrice = unitPrice;
+        SourceType = sourceType;
+        SourceReferenceId = sourceReferenceId;
+        Status = InvoiceLineStatus.Draft;
     }
 
     public string ServiceCode { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
     public int Quantity { get; private set; }
     public Money UnitPrice { get; private set; } = null!;
+    /// <summary>What this line bills for — used to charge it when delivery is confirmed.</summary>
+    public string SourceType { get; private set; } = string.Empty;
+    /// <summary>The prescription / lab order / consultation this line came from.</summary>
+    public Guid? SourceReferenceId { get; private set; }
+    public InvoiceLineStatus Status { get; private set; }
 
     public Money LineTotal => (UnitPrice * Quantity).Value;
 
-    internal static Result<InvoiceLine> Create(string serviceCode, string description, int quantity, Money unitPrice)
+    internal static Result<InvoiceLine> Create(
+        string serviceCode, string description, int quantity, Money unitPrice,
+        string sourceType, Guid? sourceReferenceId)
     {
         if (string.IsNullOrWhiteSpace(serviceCode)) return Error.Validation("Service code is required.");
         if (string.IsNullOrWhiteSpace(description)) return Error.Validation("Service description is required.");
         if (quantity <= 0) return Error.Validation("Quantity must be positive.");
-        return new InvoiceLine(Guid.NewGuid(), serviceCode.Trim(), description.Trim(), quantity, unitPrice);
+        return new InvoiceLine(Guid.NewGuid(), serviceCode.Trim(), description.Trim(), quantity, unitPrice,
+            sourceType.Trim(), sourceReferenceId);
     }
+
+    /// <summary>Confirms the charge (service delivered — dispensed / resulted).</summary>
+    public void MarkCharged() => Status = InvoiceLineStatus.Charged;
 }

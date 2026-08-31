@@ -14,4 +14,10 @@ public sealed record PrescriptionCreatedDomainEvent(
     IReadOnlyList<PrescriptionItemData> Items,
     DateTime OccurredAtUtc) : IDomainEvent;
 
-public sealed record PrescriptionItemData(Guid DrugId, string DosageInstructions, int QuantityPrescribed);
+public sealed record PrescriptionItemData(
+    Guid DrugId,
+    string DosageInstructions,
+    string Route,
+    string Frequency,
+    int? DurationDays,
+    int QuantityPrescribed);

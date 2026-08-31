@@ -21,8 +21,11 @@ public class LabOrderTests
             Guid.NewGuid(), DateTime.UtcNow);
 
         Assert.True(result.IsSuccess);
-        Assert.Single(order.DomainEvents);
-        Assert.IsType<LabResultRecordedDomainEvent>(order.DomainEvents.Single());
+        // Completing the final test publishes BOTH the per-result notification and
+        // the order-completed event (which Billing uses to charge the draft line).
+        Assert.Equal(2, order.DomainEvents.Count);
+        Assert.Contains(order.DomainEvents, e => e is LabResultRecordedDomainEvent);
+        Assert.Contains(order.DomainEvents, e => e is LabOrderCompletedDomainEvent);
         Assert.Equal(LabOrderStatus.Completed, order.Status);
     }
 

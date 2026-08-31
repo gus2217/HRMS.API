@@ -51,7 +51,7 @@ public static class InventoryEndpoints
         CreateDrugRequestDto request, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new CreateDrugCommand(
-            request.Code, request.Name, request.Form, request.UnitPrice, request.ReorderLevel), ct);
+            request.Code, request.Name, request.Category, request.Form, request.UnitPrice, request.ReorderLevel), ct);
         return result.IsSuccess ? Results.Created($"/api/v1/inventory/drugs/{result.Value.Id}", result.Value) : MapError(result.Error);
     }
 

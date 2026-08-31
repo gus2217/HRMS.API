@@ -6,7 +6,8 @@ public sealed record InvoiceLineDto(
     string Description,
     int Quantity,
     decimal UnitPrice,
-    decimal LineTotal);
+    decimal LineTotal,
+    string Status);
 
 public sealed record InvoiceSummaryDto(
     Guid Id,

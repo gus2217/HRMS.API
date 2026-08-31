@@ -14,7 +14,7 @@ public class PrescriptionTests
     public void Dispense_respects_prescribed_quantity()
     {
         var p = NewPrescription();
-        p.AddItem(Guid.NewGuid(), "Take 2x daily", 10);
+        p.AddItem(Guid.NewGuid(), "Take 2x daily", "Oral", "Twice daily", 5, 10);
         var item = p.Items.Single();
 
         Assert.True(p.DispenseItem(item.Id, 6).IsSuccess);
@@ -26,7 +26,7 @@ public class PrescriptionTests
     public void Cannot_dispense_beyond_prescribed()
     {
         var p = NewPrescription();
-        p.AddItem(Guid.NewGuid(), "Take 1x daily", 5);
+        p.AddItem(Guid.NewGuid(), "Take 1x daily", "Oral", "Once daily", 5, 5);
         var item = p.Items.Single();
 
         p.DispenseItem(item.Id, 5);
@@ -37,7 +37,7 @@ public class PrescriptionTests
     public void Fully_dispensed_when_all_items_dispensed()
     {
         var p = NewPrescription();
-        p.AddItem(Guid.NewGuid(), "Take 1x daily", 3);
+        p.AddItem(Guid.NewGuid(), "Take 1x daily", "Oral", "Once daily", 5, 3);
         var item = p.Items.Single();
 
         p.DispenseItem(item.Id, 3);

@@ -31,6 +31,9 @@ public sealed class PrescriptionItemConfiguration : IEntityTypeConfiguration<Pre
         builder.HasKey(i => i.Id);
         builder.Property(i => i.DrugId).IsRequired();
         builder.Property(i => i.DosageInstructions).HasMaxLength(500).IsRequired();
+        builder.Property(i => i.Route).HasMaxLength(50).IsRequired();
+        builder.Property(i => i.Frequency).HasMaxLength(50);
+        builder.Property(i => i.DurationDays);
         builder.Property(i => i.QuantityPrescribed).IsRequired();
         builder.Property(i => i.QuantityDispensed).IsRequired();
         builder.Property(i => i.Status).HasConversion<string>().HasMaxLength(32);

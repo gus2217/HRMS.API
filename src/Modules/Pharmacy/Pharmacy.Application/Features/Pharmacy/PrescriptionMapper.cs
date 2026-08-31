@@ -15,6 +15,7 @@ internal static class PrescriptionMapper
             p.Id, p.PatientId, p.ConsultationId, p.PrescribedByUserId,
             p.Status.ToString(), p.PrescribedAtUtc,
             p.Items.Select(i => new PrescriptionItemDto(
-                i.Id, i.DrugId, i.DosageInstructions, i.QuantityPrescribed,
-                i.QuantityDispensed, i.Status.ToString())).ToArray());
+                i.Id, i.DrugId, string.Empty, string.Empty, string.Empty,
+                i.DosageInstructions, i.Route, i.Frequency, i.DurationDays,
+                i.QuantityPrescribed, i.QuantityDispensed, i.Status.ToString())).ToArray());
 }

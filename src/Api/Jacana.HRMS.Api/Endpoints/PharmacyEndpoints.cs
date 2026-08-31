@@ -25,6 +25,9 @@ public static class PharmacyEndpoints
         group.MapGet("/consultations/{consultationId:guid}/prescriptions", GetPrescriptionsByConsultationAsync)
             .RequireAuthorization(Permissions.Clinical.View);
 
+        group.MapGet("/reservations", GetReservationsAsync)
+            .RequireAuthorization(Permissions.Clinical.RecordDiagnosis);
+
         group.MapPost("/dispense", DispenseAsync)
             .RequireAuthorization(Permissions.Pharmacy.Dispense);
 
@@ -36,7 +39,8 @@ public static class PharmacyEndpoints
     {
         var result = await sender.Send(new CreatePrescriptionCommand(
             request.PatientId, request.ConsultationId,
-            request.Items.Select(i => new PrescriptionItemInput(i.DrugId, i.DosageInstructions, i.QuantityPrescribed)).ToArray()), ct);
+            request.Items.Select(i => new PrescriptionItemInput(
+                i.DrugId, i.DosageInstructions, i.Route, i.Frequency, i.DurationDays, i.QuantityPrescribed)).ToArray()), ct);
         return result.IsSuccess ? Results.Created($"/api/v1/pharmacy/prescriptions/{result.Value.Id}", result.Value) : MapError(result.Error);
     }
 
@@ -57,6 +61,12 @@ public static class PharmacyEndpoints
         Guid consultationId, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new GetPrescriptionsByConsultationQuery(consultationId), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> GetReservationsAsync(ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new GetReservationsQuery(), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

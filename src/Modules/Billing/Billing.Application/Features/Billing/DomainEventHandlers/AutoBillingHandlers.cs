@@ -49,7 +49,8 @@ public sealed class PrescriptionCreatedBillingHandler(
             if (unitPrice.IsFailure) continue;
 
             var add = invoice.AddLine(
-                price.Code, $"{price.Name} × {item.QuantityPrescribed}", item.QuantityPrescribed, unitPrice.Value);
+                price.Code, $"{price.Name} ({price.Category}) — {item.DosageInstructions}",
+                item.QuantityPrescribed, unitPrice.Value, "Prescription", e.PrescriptionId);
             if (add.IsFailure) continue;
         }
 
@@ -82,7 +83,7 @@ public sealed class LabOrderCreatedBillingHandler(
 
         foreach (var test in e.Tests)
         {
-            var add = invoice.AddLine(test.TestCode, test.TestName, 1, fee.Value);
+            var add = invoice.AddLine(test.TestCode, test.TestName, 1, fee.Value, "Lab", e.LabOrderId);
             if (add.IsFailure) continue;
         }
 
@@ -115,9 +116,10 @@ public sealed class ConsultationCompletedBillingHandler(
 
         // Idempotent: the fee is already on the draft (added at consultation start);
         // only add it here as a fallback for consultations started before that hook.
-        AutoBilling.AddLineIfMissing(invoice, "CONSULT", "Consultation fee", 1, fee.Value);
+        AutoBilling.AddLineIfMissing(invoice, "CONSULT", "Consultation fee", 1, fee.Value, "Consultation", e.ConsultationId);
 
-        // Issue the accumulated bill so cashiers/receptionists can confirm payment.
+        // Charge the consultation fee + any still-draft lines, then issue the bill.
+        invoice.ChargeLines(e.ConsultationId);
         invoice.Issue();
         await invoices.UpdateAsync(invoice, ct); // marks client-keyed new lines Added (phantom-UPDATE fix)
         await AutoBilling.CommitAsync(unitsOfWork, ct);
@@ -147,8 +149,52 @@ public sealed class ConsultationStartedBillingHandler(
         var fee = Money.Create(options.Value.ConsultationFee);
         if (fee.IsFailure) return;
 
-        AutoBilling.AddLineIfMissing(invoice, "CONSULT", "Consultation fee", 1, fee.Value);
+        AutoBilling.AddLineIfMissing(invoice, "CONSULT", "Consultation fee", 1, fee.Value, "Consultation", e.ConsultationId);
 
+        await invoices.UpdateAsync(invoice, ct);
+        await AutoBilling.CommitAsync(unitsOfWork, ct);
+        invoices.Detach(invoice);
+    }
+}
+
+/// <summary>
+/// Charges a prescription's draft lines the moment it is fully dispensed.
+/// </summary>
+public sealed class PrescriptionFullyDispensedBillingHandler(
+    IInvoiceRepository invoices,
+    IEnumerable<IUnitOfWork> unitsOfWork)
+    : INotificationHandler<DomainEventNotification<PrescriptionFullyDispensedDomainEvent>>
+{
+    public async Task Handle(
+        DomainEventNotification<PrescriptionFullyDispensedDomainEvent> notification, CancellationToken ct)
+    {
+        var e = notification.DomainEvent;
+        var invoice = await invoices.GetByConsultationAsync(e.ConsultationId, ct);
+        if (invoice is null) return;
+
+        invoice.ChargeLines(e.PrescriptionId);
+        await invoices.UpdateAsync(invoice, ct);
+        await AutoBilling.CommitAsync(unitsOfWork, ct);
+        invoices.Detach(invoice);
+    }
+}
+
+/// <summary>
+/// Charges a lab order's draft lines the moment it is completed (all tests resulted).
+/// </summary>
+public sealed class LabOrderCompletedBillingHandler(
+    IInvoiceRepository invoices,
+    IEnumerable<IUnitOfWork> unitsOfWork)
+    : INotificationHandler<DomainEventNotification<LabOrderCompletedDomainEvent>>
+{
+    public async Task Handle(
+        DomainEventNotification<LabOrderCompletedDomainEvent> notification, CancellationToken ct)
+    {
+        var e = notification.DomainEvent;
+        var invoice = await invoices.GetByConsultationAsync(e.ConsultationId, ct);
+        if (invoice is null) return;
+
+        invoice.ChargeLines(e.LabOrderId);
         await invoices.UpdateAsync(invoice, ct);
         await AutoBilling.CommitAsync(unitsOfWork, ct);
         invoices.Detach(invoice);
@@ -184,11 +230,13 @@ internal static class AutoBilling
     /// Adds a line only if no line with the same service code already exists.
     /// Keeps the auto-billing handlers idempotent across a consultation's lifetime.
     /// </summary>
-    public static void AddLineIfMissing(Invoice invoice, string serviceCode, string description, int quantity, Money unitPrice)
+    public static void AddLineIfMissing(
+        Invoice invoice, string serviceCode, string description, int quantity, Money unitPrice,
+        string sourceType, Guid? sourceReferenceId)
     {
         if (invoice.Lines.Any(l => l.ServiceCode == serviceCode))
             return;
-        invoice.AddLine(serviceCode, description, quantity, unitPrice);
+        invoice.AddLine(serviceCode, description, quantity, unitPrice, sourceType, sourceReferenceId);
     }
 
     /// <summary>

@@ -3,7 +3,13 @@ namespace Jacana.Pharmacy.Application.DTOs;
 public sealed record PrescriptionItemDto(
     Guid Id,
     Guid DrugId,
+    string DrugName,
+    string DrugCategory,
+    string DrugForm,
     string DosageInstructions,
+    string Route,
+    string Frequency,
+    int? DurationDays,
     int QuantityPrescribed,
     int QuantityDispensed,
     string Status);
@@ -40,3 +46,6 @@ public sealed record DispenseMedicationResponseDto(
     Guid DispenseRecordId,
     Guid PrescriptionItemId,
     int QuantityDispensed);
+
+/// <summary>Quantity of a drug committed to active (un-dispensed) prescriptions.</summary>
+public sealed record DrugReservationDto(Guid DrugId, int ReservedQuantity);

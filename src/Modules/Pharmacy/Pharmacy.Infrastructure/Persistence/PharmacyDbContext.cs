@@ -10,6 +10,7 @@ public sealed class PharmacyDbContext : DbContext
     public PharmacyDbContext(DbContextOptions<PharmacyDbContext> options) : base(options) { }
 
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
+    public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
     public DbSet<DispenseRecord> DispenseRecords => Set<DispenseRecord>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();

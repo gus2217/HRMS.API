@@ -49,14 +49,39 @@ public sealed class Invoice : AggregateRoot<Guid>
     }
 
     public Result AddLine(string serviceCode, string description, int quantity, Money unitPrice)
+        => AddLine(serviceCode, description, quantity, unitPrice, string.Empty, null);
+
+    public Result AddLine(
+        string serviceCode, string description, int quantity, Money unitPrice,
+        string sourceType, Guid? sourceReferenceId)
     {
         if (Status != InvoiceStatus.Draft)
             return Error.InvalidOperation("Cannot add lines to a non-draft invoice.");
 
-        var line = InvoiceLine.Create(serviceCode, description, quantity, unitPrice);
+        var line = InvoiceLine.Create(serviceCode, description, quantity, unitPrice, sourceType, sourceReferenceId);
         if (line.IsFailure) return line.Error;
         _lines.Add(line.Value);
         return Result.Success();
+    }
+
+    /// <summary>Marks every line originating from <paramref name="sourceReferenceId"/> as charged.</summary>
+    public void ChargeLines(Guid sourceReferenceId)
+    {
+        foreach (var line in _lines)
+        {
+            if (line.SourceReferenceId == sourceReferenceId && line.Status == InvoiceLineStatus.Draft)
+                line.MarkCharged();
+        }
+    }
+
+    /// <summary>Marks all draft lines charged (the whole visit was delivered).</summary>
+    public void ChargeAllLines()
+    {
+        foreach (var line in _lines)
+        {
+            if (line.Status == InvoiceLineStatus.Draft)
+                line.MarkCharged();
+        }
     }
 
     public Result Issue(PaymentMethod? primaryMethod = null)

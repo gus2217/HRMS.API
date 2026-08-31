@@ -13,6 +13,7 @@ public sealed class DrugConfiguration : IEntityTypeConfiguration<Drug>
         builder.Property(d => d.Code).HasMaxLength(32).IsRequired();
         builder.HasIndex(d => d.Code).IsUnique();
         builder.Property(d => d.Name).HasMaxLength(150).IsRequired();
+        builder.Property(d => d.Category).HasMaxLength(64).IsRequired();
         builder.Property(d => d.Form).HasMaxLength(50).IsRequired();
         builder.Property(d => d.ReorderLevel).IsRequired();
         builder.Property(d => d.Status).HasConversion<string>().HasMaxLength(16);

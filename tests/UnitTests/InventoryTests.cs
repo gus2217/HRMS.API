@@ -11,9 +11,10 @@ public class DrugTests
     {
         var price = Money.Create(10m).Value;
         var facility = FacilityId.New();
-        Assert.True(Drug.Create(Guid.NewGuid(), facility, "", "Paracetamol", "Tablet", price, 10).IsFailure);
-        Assert.True(Drug.Create(Guid.NewGuid(), facility, "PCM", "", "Tablet", price, 10).IsFailure);
-        Assert.True(Drug.Create(Guid.NewGuid(), facility, "PCM", "Paracetamol", "", price, 10).IsFailure);
+        Assert.True(Drug.Create(Guid.NewGuid(), facility, "", "Paracetamol", "Analgesic", "Tablet", price, 10).IsFailure);
+        Assert.True(Drug.Create(Guid.NewGuid(), facility, "PCM", "", "Analgesic", "Tablet", price, 10).IsFailure);
+        Assert.True(Drug.Create(Guid.NewGuid(), facility, "PCM", "Paracetamol", "", "Tablet", price, 10).IsFailure);
+        Assert.True(Drug.Create(Guid.NewGuid(), facility, "PCM", "Paracetamol", "Analgesic", "", price, 10).IsFailure);
     }
 }
 

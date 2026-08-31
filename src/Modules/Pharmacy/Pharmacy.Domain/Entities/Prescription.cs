@@ -41,9 +41,9 @@ public sealed class Prescription : AggregateRoot<Guid>
         return new Prescription(id, facilityId, patientId, consultationId, prescribedByUserId, prescribedAtUtc);
     }
 
-    public Result AddItem(Guid drugId, string dosageInstructions, int quantityPrescribed)
+    public Result AddItem(Guid drugId, string dosageInstructions, string route, string frequency, int? durationDays, int quantityPrescribed)
     {
-        var item = PrescriptionItem.Create(drugId, dosageInstructions, quantityPrescribed);
+        var item = PrescriptionItem.Create(drugId, dosageInstructions, route, frequency, durationDays, quantityPrescribed);
         if (item.IsFailure) return item.Error;
         _items.Add(item.Value);
         return Result.Success();
@@ -57,7 +57,7 @@ public sealed class Prescription : AggregateRoot<Guid>
         => AddDomainEvent(new PrescriptionCreatedDomainEvent(
             Id, FacilityId.Value, PatientId, ConsultationId,
             _items.Select(i => new PrescriptionItemData(
-                i.DrugId, i.DosageInstructions, i.QuantityPrescribed)).ToArray(),
+                i.DrugId, i.DosageInstructions, i.Route, i.Frequency, i.DurationDays, i.QuantityPrescribed)).ToArray(),
             PrescribedAtUtc));
 
     public Result DispenseItem(Guid itemId, int quantity)
@@ -65,10 +65,17 @@ public sealed class Prescription : AggregateRoot<Guid>
         var item = _items.FirstOrDefault(i => i.Id == itemId);
         if (item is null) return Error.NotFound("Prescription item not found.");
 
+        var wasFullyDispensed = Status == PrescriptionStatus.FullyDispensed;
+
         var result = item.Dispense(quantity);
         if (result.IsFailure) return result.Error;
 
         RecomputeStatus();
+
+        // Charge the prescription's bill the moment its final item is dispensed.
+        if (!wasFullyDispensed && Status == PrescriptionStatus.FullyDispensed)
+            AddDomainEvent(new PrescriptionFullyDispensedDomainEvent(Id, ConsultationId, DateTime.UtcNow));
+
         return Result.Success();
     }
 

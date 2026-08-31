@@ -18,12 +18,12 @@ public sealed class CreateDrugCommandHandler(
         if (price.IsFailure) return price.Error;
 
         var drug = Drug.Create(Guid.NewGuid(), currentUser.FacilityId,
-            request.Code, request.Name, request.Form, price.Value, request.ReorderLevel);
+            request.Code, request.Name, request.Category, request.Form, price.Value, request.ReorderLevel);
         if (drug.IsFailure) return drug.Error;
 
         await drugs.AddAsync(drug.Value, ct);
 
-        return new DrugCatalogDto(drug.Value.Id, drug.Value.Code, drug.Value.Name,
+        return new DrugCatalogDto(drug.Value.Id, drug.Value.Code, drug.Value.Name, drug.Value.Category,
             drug.Value.Form, drug.Value.UnitPrice.Amount, drug.Value.ReorderLevel, drug.Value.Status.ToString(), 0);
     }
 }
