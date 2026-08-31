@@ -82,10 +82,13 @@ public sealed class ReportingReadRepository(string connectionString) : IReportin
         await using var conn = new NpgsqlConnection(connectionString);
         return (await conn.QueryAsync<ClinicianWorkloadDto>(new CommandDefinition(
             """
-            SELECT "ClinicianUserId", CAST(COUNT(*) AS integer) AS "ConsultationCount"
-            FROM clinical.consultations
-            WHERE "IsDeleted" = false
-            GROUP BY "ClinicianUserId"
+            SELECT c."ClinicianUserId",
+                   COALESCE(u."FullName", 'Unknown clinician') AS "ClinicianName",
+                   CAST(COUNT(*) AS integer) AS "ConsultationCount"
+            FROM clinical.consultations c
+            LEFT JOIN identity.users u ON u."Id" = c."ClinicianUserId"
+            WHERE c."IsDeleted" = false
+            GROUP BY c."ClinicianUserId", u."FullName"
             ORDER BY "ConsultationCount" DESC
             """,
             cancellationToken: ct))).ToList();

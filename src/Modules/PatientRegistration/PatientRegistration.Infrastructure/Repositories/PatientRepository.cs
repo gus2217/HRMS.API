@@ -38,9 +38,11 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
     public async Task<IReadOnlyList<PatientSummaryDto>> SearchAsync(
         string? search, int pageNumber, int pageSize, string? sort = null, CancellationToken ct = default)
     {
+        var term = search?.Trim();
         var query = db.Patients.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(p => p.FirstName.Contains(search) || p.LastName.Contains(search) || p.PatientNumber.Contains(search));
+
+        if (!string.IsNullOrWhiteSpace(term))
+            query = await BuildSearchQueryAsync(query, term, ct);
 
         query = string.Equals(sort, "latest", StringComparison.OrdinalIgnoreCase)
             ? query.OrderByDescending(p => p.CreatedAtUtc)
@@ -55,12 +57,53 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
             .ToListAsync(ct);
     }
 
-    public Task<int> CountAsync(string? search, CancellationToken ct = default)
+    public async Task<int> CountAsync(string? search, CancellationToken ct = default)
     {
+        var term = search?.Trim();
         var query = db.Patients.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(p => p.FirstName.Contains(search) || p.LastName.Contains(search) || p.PatientNumber.Contains(search));
-        return query.CountAsync(ct);
+        if (!string.IsNullOrWhiteSpace(term))
+            query = await BuildSearchQueryAsync(query, term, ct);
+        return await query.CountAsync(ct);
+    }
+
+    /// <summary>
+    /// Matches a free-text term against name, patient number, phone (any Kenyan
+    /// format) and national ID simultaneously. National ID is encrypted at rest,
+    /// so exact matching resolves IDs in memory — guarded to digit-only terms that
+    /// are not already a valid phone.
+    /// </summary>
+    private async Task<IQueryable<Patient>> BuildSearchQueryAsync(
+        IQueryable<Patient> query, string term, CancellationToken ct)
+    {
+        var lower = term.ToLowerInvariant();
+        var phone = PhoneNumber.TryNormalize(term);
+
+        var nationalIds = await ResolveNationalIdMatchesAsync(term, phone, ct);
+
+        return query.Where(p =>
+            p.FirstName.ToLower().Contains(lower)
+            || p.LastName.ToLower().Contains(lower)
+            || (p.FirstName + " " + p.LastName).ToLower().Contains(lower)
+            || p.PatientNumber.ToLower().Contains(lower)
+            || (phone != null && p.Phone.Value == phone)
+            || nationalIds.Contains(p.Id));
+    }
+
+    private async Task<IReadOnlyList<Guid>> ResolveNationalIdMatchesAsync(
+        string term, string? phone, CancellationToken ct)
+    {
+        if (phone is not null) return [];
+        if (!term.All(char.IsDigit) || term.Length < 6 || term.Length > 12) return [];
+
+        var rows = await db.Patients.AsNoTracking()
+            .Where(p => p.NationalId != null)
+            .Select(p => new { p.Id, p.NationalId })
+            .ToListAsync(ct);
+
+        return rows
+            .Where(r => r.NationalId!.Value == term)
+            .Select(r => r.Id)
+            .ToList();
     }
 
     public async Task<PatientDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default)
@@ -92,13 +135,14 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
 
         var candidates = new List<Patient>();
 
-        // Exact phone match (normalised value) — high confidence.
+        // Exact phone match (any Kenyan format) — high confidence.
         if (!string.IsNullOrWhiteSpace(phone))
         {
-            var phoneValue = phone.Trim();
-            candidates.AddRange(await query
-                .Where(p => p.Phone.Value == phoneValue)
-                .ToListAsync(ct));
+            var phoneValue = PhoneNumber.TryNormalize(phone);
+            if (phoneValue is not null)
+                candidates.AddRange(await query
+                    .Where(p => p.Phone.Value == phoneValue)
+                    .ToListAsync(ct));
         }
 
         // Exact NationalId match — in-memory equality (encrypted at rest).

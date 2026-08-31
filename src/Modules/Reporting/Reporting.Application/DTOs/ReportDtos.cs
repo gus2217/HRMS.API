@@ -27,6 +27,7 @@ public sealed record ShaClaimStatusReportDto(
 /// <summary>Consultation workload per clinician.</summary>
 public sealed record ClinicianWorkloadDto(
     Guid ClinicianUserId,
+    string ClinicianName,
     int ConsultationCount);
 
 /// <summary>Facility-wide dashboard summary.</summary>

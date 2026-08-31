@@ -19,8 +19,8 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(a => new AuditLogEntryDto(
-                a.Id, a.FacilityId, a.EntityType, a.EntityId, a.Action.ToString(),
-                a.PerformedByUserId, a.PerformedAtUtc, a.BeforeValuesJson, a.AfterValuesJson))
+                a.Id, a.FacilityId, a.EntityType, a.EntityId, null, a.Action.ToString(),
+                a.PerformedByUserId, null, a.PerformedAtUtc, a.BeforeValuesJson, a.AfterValuesJson))
             .ToListAsync(ct);
     }
 

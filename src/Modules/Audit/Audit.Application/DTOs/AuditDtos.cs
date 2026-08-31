@@ -5,8 +5,10 @@ public sealed record AuditLogEntryDto(
     Guid FacilityId,
     string EntityType,
     string EntityId,
+    string? EntityName,
     string Action,
     Guid PerformedByUserId,
+    string? PerformedByName,
     DateTime PerformedAtUtc,
     string? BeforeValuesJson,
     string? AfterValuesJson);
