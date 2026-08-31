@@ -52,9 +52,15 @@ public sealed class DispenseMedicationCommandHandler(
         if (item is null) return Error.NotFound("Prescription item not found.");
 
         // Guard: cannot dispense more than available stock (via Inventory read contract).
-        var available = await stockQuery.GetAvailableQuantityAsync(item.DrugId, ct);
-        if (request.Quantity > available)
-            return Error.InvalidOperation($"Insufficient stock: only {available} available.");
+        // Only enforced when the drug is actually stock-tracked — an untracked drug
+        // (no batches ever received) must not block dispensing entirely.
+        var isTracked = await stockQuery.IsTrackedAsync(item.DrugId, ct);
+        if (isTracked)
+        {
+            var available = await stockQuery.GetAvailableQuantityAsync(item.DrugId, ct);
+            if (request.Quantity > available)
+                return Error.InvalidOperation($"Insufficient stock: only {available} available.");
+        }
 
         var dispense = prescription.DispenseItem(request.PrescriptionItemId, request.Quantity);
         if (dispense.IsFailure) return dispense.Error;
