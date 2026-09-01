@@ -67,11 +67,14 @@ public sealed class Appointment : AggregateRoot<Guid>
             return Error.Validation("Duration must be between 1 and 480 minutes.");
         if (createdByUserId == Guid.Empty) return Error.Validation("Creator is required.");
 
-        return new Appointment(id, facilityId, patientId, clinicType.Trim(), type,
+        var appointment = new Appointment(id, facilityId, patientId, clinicType.Trim(), type,
             scheduledAtUtc, durationMinutes,
             string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(),
             previousConsultationId,
             recurrenceGroupId, recurrencePattern, createdByUserId, createdAtUtc);
+        appointment.AddDomainEvent(new AppointmentRequestedDomainEvent(
+            id, facilityId.Value, patientId, clinicType.Trim(), createdAtUtc));
+        return appointment;
     }
 
     /// <summary>

@@ -80,6 +80,8 @@ builder.Services.AddSingleton<IPatientIdentityLookup>(_ =>
     new PatientIdentityLookup(connectionString));
 builder.Services.AddSingleton<IUserIdentityLookup>(_ =>
     new UserIdentityLookup(connectionString));
+builder.Services.AddSingleton<IUserRoleLookup>(_ =>
+    new UserRoleLookup(connectionString));
 builder.Services.AddSingleton<IValueEncryptor>(_ =>
     new Jacana.SharedKernel.Infrastructure.Security.AesGcmValueEncryptor(
         builder.Configuration["Security:EncryptionKey"]
@@ -120,7 +122,7 @@ builder.Services.AddApplicationPipeline(typeof(IssueInvoiceCommand).Assembly);
 builder.Services.AddInpatientInfrastructure(connectionString);
 builder.Services.AddApplicationPipeline(typeof(AdmitPatientCommand).Assembly);
 builder.Services.AddNotificationsInfrastructure(connectionString);
-builder.Services.AddApplicationPipeline(typeof(Jacana.Notifications.Application.DomainEventHandlers.LabResultRecordedHandler).Assembly);
+builder.Services.AddApplicationPipeline(typeof(Jacana.Notifications.Application.DomainEventHandlers.ConsultationRequestedHandler).Assembly);
 builder.Services.AddAuditInfrastructure(connectionString);
 builder.Services.AddApplicationPipeline(typeof(GetAuditLogQuery).Assembly);
 
@@ -216,6 +218,7 @@ app.MapLaboratoryEndpoints();
 app.MapBillingEndpoints();
 app.MapInpatientEndpoints();
 app.MapAuditEndpoints();
+app.MapNotificationEndpoints();
 app.MapReportingEndpoints();
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))

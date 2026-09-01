@@ -10,6 +10,7 @@ public sealed class NotificationsDbContext : DbContext
     public NotificationsDbContext(DbContextOptions<NotificationsDbContext> options) : base(options) { }
 
     public DbSet<NotificationMessage> NotificationMessages => Set<NotificationMessage>();
+    public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 

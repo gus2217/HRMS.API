@@ -49,9 +49,12 @@ public sealed class AppointmentRequest : AggregateRoot<Guid>
         if (string.IsNullOrWhiteSpace(reason)) return Error.Validation("Reason is required.");
         if (requestedByUserId == Guid.Empty) return Error.Validation("Requester is required.");
 
-        return new AppointmentRequest(id, facilityId, patientId, clinicType.Trim(),
+        var request = new AppointmentRequest(id, facilityId, patientId, clinicType.Trim(),
             reason.Trim(), string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
             preferredDate, requestedByUserId, requestedAtUtc);
+        request.AddDomainEvent(new AppointmentRequestRaisedDomainEvent(
+            id, facilityId.Value, patientId, clinicType.Trim(), requestedAtUtc));
+        return request;
     }
 
     /// <summary>Clinician approves and schedules the appointment.</summary>

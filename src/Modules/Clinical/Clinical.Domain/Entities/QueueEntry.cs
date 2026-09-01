@@ -50,9 +50,13 @@ public sealed class QueueEntry : AggregateRoot<Guid>
         if (patientId == Guid.Empty) return Error.Validation("Patient is required.");
         if (string.IsNullOrWhiteSpace(clinicType)) return Error.Validation("Clinic is required.");
         if (requestedByUserId == Guid.Empty) return Error.Validation("Requester is required.");
-        return new QueueEntry(id, facilityId, patientId, clinicType.Trim(),
+
+        var entry = new QueueEntry(id, facilityId, patientId, clinicType.Trim(),
             priority, string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
             queueNumber, requestedByUserId, requestedAtUtc);
+        entry.AddDomainEvent(new ConsultationRequestedDomainEvent(
+            id, facilityId.Value, patientId, clinicType.Trim(), requestedByUserId, requestedAtUtc));
+        return entry;
     }
 
     /// <summary>

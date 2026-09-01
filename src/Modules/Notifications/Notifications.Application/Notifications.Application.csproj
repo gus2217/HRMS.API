@@ -9,8 +9,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\SharedKernel\SharedKernel.Application\SharedKernel.Application.csproj" />
+    <ProjectReference Include="..\..\Clinical\Clinical.Domain\Clinical.Domain.csproj" />
     <ProjectReference Include="..\..\Laboratory\Laboratory.Domain\Laboratory.Domain.csproj" />
     <ProjectReference Include="..\..\Inpatient\Inpatient.Domain\Inpatient.Domain.csproj" />
+    <ProjectReference Include="..\..\Pharmacy\Pharmacy.Domain\Pharmacy.Domain.csproj" />
     <ProjectReference Include="..\Notifications.Domain\Notifications.Domain.csproj" />
   </ItemGroup>
 </Project>

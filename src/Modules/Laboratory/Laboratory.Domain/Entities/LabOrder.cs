@@ -78,7 +78,8 @@ public sealed class LabOrder : AggregateRoot<Guid>
 
         // Charge the order's bill the moment its final test is resulted.
         if (!wasCompleted && Status == LabOrderStatus.Completed)
-            AddDomainEvent(new LabOrderCompletedDomainEvent(Id, ConsultationId, resultedAtUtc));
+            AddDomainEvent(new LabOrderCompletedDomainEvent(
+                Id, FacilityId.Value, PatientId, ConsultationId, OrderedByUserId, resultedAtUtc));
 
         return Result.Success();
     }

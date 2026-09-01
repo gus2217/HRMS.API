@@ -46,7 +46,7 @@ public sealed class Admission : AggregateRoot<Guid>
 
         var admission = new Admission(id, facilityId, patientId, admittingClinicianUserId,
             wardName.Trim(), bedNumber.Trim(), admittedAtUtc);
-        admission.AddDomainEvent(new PatientAdmittedDomainEvent(id, patientId, wardName.Trim(), admittedAtUtc));
+        admission.AddDomainEvent(new PatientAdmittedDomainEvent(id, facilityId.Value, patientId, wardName.Trim(), admittedAtUtc));
         return admission;
     }
 
@@ -68,7 +68,7 @@ public sealed class Admission : AggregateRoot<Guid>
 
         Status = AdmissionStatus.Discharged;
         DischargedAtUtc = dischargedAtUtc;
-        AddDomainEvent(new PatientDischargedDomainEvent(Id, PatientId, dischargedAtUtc));
+        AddDomainEvent(new PatientDischargedDomainEvent(Id, FacilityId.Value, PatientId, dischargedAtUtc));
         return Result.Success();
     }
 }
