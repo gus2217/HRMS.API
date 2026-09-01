@@ -10,6 +10,8 @@ public sealed class InpatientDbContext : DbContext
     public InpatientDbContext(DbContextOptions<InpatientDbContext> options) : base(options) { }
 
     public DbSet<Admission> Admissions => Set<Admission>();
+    public DbSet<Ward> Wards => Set<Ward>();
+    public DbSet<WardMedicalRecord> WardMedicalRecords => Set<WardMedicalRecord>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 

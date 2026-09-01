@@ -9,7 +9,9 @@ public interface IAdmissionRepository
     Task AddAsync(Admission admission, CancellationToken ct = default);
     Task UpdateAsync(Admission admission, CancellationToken ct = default);
     Task<AdmissionDetailDto?> GetDetailAsync(Guid id, CancellationToken ct = default);
+    Task<WardRecordAttachment?> GetAttachmentAsync(Guid attachmentId, CancellationToken ct = default);
     Task<IReadOnlyList<WardOccupancyDto>> GetWardOccupancyAsync(CancellationToken ct = default);
+    Task<int> GetOccupiedBedCountAsync(Guid wardId, CancellationToken ct = default);
     Task<IReadOnlyList<AdmissionSummaryDto>> SearchAsync(
         bool activeOnly, Guid? patientId, int pageNumber, int pageSize, CancellationToken ct = default);
     Task<int> CountAsync(bool activeOnly, Guid? patientId, CancellationToken ct = default);

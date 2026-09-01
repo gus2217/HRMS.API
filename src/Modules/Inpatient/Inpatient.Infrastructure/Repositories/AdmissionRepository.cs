@@ -9,8 +9,14 @@ namespace Jacana.Inpatient.Infrastructure.Repositories;
 
 public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepository
 {
-    public async Task<Admission?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => await db.Admissions.Include(a => a.Notes).FirstOrDefaultAsync(a => a.Id == id, ct);
+    public Task<Admission?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => db.Admissions
+            .Include(a => a.Notes)
+            .Include(a => a.MedicalRecords).ThenInclude(r => r.Attachments)
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+
+    public Task<WardRecordAttachment?> GetAttachmentAsync(Guid attachmentId, CancellationToken ct = default)
+        => db.Set<WardRecordAttachment>().FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
 
     public Task AddAsync(Admission admission, CancellationToken ct = default)
     {
@@ -24,6 +30,22 @@ public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepos
         // client-generated keys; EF DetectChanges would classify them as Modified
         // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
         db.MarkNewChildrenAdded(admission);
+
+        // Medical records + their attachments are 1:N reference navigations (not
+        // enumerable props on the aggregate itself) — walk them explicitly.
+        foreach (var record in admission.MedicalRecords)
+        {
+            var entry = db.Entry(record);
+            if (entry.State == EntityState.Detached)
+                entry.State = EntityState.Added;
+            foreach (var attachment in record.Attachments)
+            {
+                var aEntry = db.Entry(attachment);
+                if (aEntry.State == EntityState.Detached)
+                    aEntry.State = EntityState.Added;
+            }
+        }
+
         return Task.CompletedTask;
     }
 
@@ -41,7 +63,8 @@ public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepos
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(a => new AdmissionSummaryDto(
-                a.Id, a.PatientId, a.WardName, a.BedNumber, a.Status.ToString(), a.AdmittedAtUtc))
+                a.Id, a.PatientId, a.WardId, a.WardName, a.BedNumber,
+                a.Status.ToString(), a.AdmittedAtUtc))
             .ToListAsync(ct);
     }
 
@@ -59,26 +82,46 @@ public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepos
     {
         var a = await db.Admissions.AsNoTracking()
             .Include(x => x.Notes)
+            .Include(x => x.MedicalRecords).ThenInclude(r => r.Attachments)
             .FirstOrDefaultAsync(x => x.Id == id, ct);
 
         if (a is null) return null;
 
         return new AdmissionDetailDto(
-            a.Id, a.PatientId, a.AdmittingClinicianUserId, a.WardName, a.BedNumber,
+            a.Id, a.PatientId, a.AdmittingClinicianUserId, a.WardId, a.WardName, a.BedNumber,
+            a.AdmittingDiagnosis, a.AttendingClinicianUserId,
             a.Status.ToString(), a.AdmittedAtUtc, a.DischargedAtUtc,
-            a.Notes.Select(n => new WardNoteDto(n.Content, n.AuthorUserId, n.RecordedAtUtc)).ToArray());
+            a.Notes.Select(n => new WardNoteDto(n.Content, n.AuthorUserId, n.RecordedAtUtc)).ToArray(),
+            a.MedicalRecords.Select(r => new WardMedicalRecordDto(
+                r.Id, r.RecordedByUserId, r.RecordedAtUtc,
+                r.TemperatureCelsius, r.SystolicBp, r.DiastolicBp, r.PulseRate,
+                r.RespiratoryRate, r.OxygenSaturation, r.WeightKg,
+                r.Subjective, r.Objective, r.Assessment, r.Plan, r.IsComplete,
+                r.Attachments.Select(at => new WardRecordAttachmentDto(
+                    at.Id, at.FileName, at.ContentType, at.SizeBytes, at.UploadedAtUtc)).ToArray())).ToArray(),
+            a.HasCompleteMedicalRecord);
     }
+
+    public Task<int> GetOccupiedBedCountAsync(Guid wardId, CancellationToken ct = default)
+        => db.Admissions.AsNoTracking()
+            .CountAsync(a => a.WardId == wardId && a.Status != AdmissionStatus.Discharged, ct);
 
     public async Task<IReadOnlyList<WardOccupancyDto>> GetWardOccupancyAsync(CancellationToken ct = default)
     {
         var grouped = await db.Admissions.AsNoTracking()
             .Where(a => a.Status != AdmissionStatus.Discharged)
-            .GroupBy(a => a.WardName)
-            .Select(g => new { WardName = g.Key, Occupied = g.Count() })
+            .GroupBy(a => new { a.WardId, a.WardName })
+            .Select(g => new { g.Key.WardId, g.Key.WardName, Occupied = g.Count() })
             .ToListAsync(ct);
 
-        return grouped
-            .Select(g => new WardOccupancyDto(g.WardName, g.Occupied, 0))
-            .ToArray();
+        var wards = await db.Wards.AsNoTracking()
+            .Select(w => new { w.Id, w.Name, w.TotalBeds })
+            .ToListAsync(ct);
+
+        return wards.Select(w =>
+        {
+            var match = grouped.FirstOrDefault(g => g.WardId == w.Id);
+            return new WardOccupancyDto(w.Id, w.Name, match?.Occupied ?? 0, w.TotalBeds);
+        }).ToArray();
     }
 }

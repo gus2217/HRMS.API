@@ -8,7 +8,17 @@ public class AdmissionTests
 {
     private static Admission NewAdmission()
         => Admission.Admit(Guid.NewGuid(), FacilityId.New(), Guid.NewGuid(),
-            Guid.NewGuid(), "Ward A", "Bed 1", DateTime.UtcNow).Value;
+            Guid.NewGuid(), Guid.NewGuid(), "Ward A", "Bed 1", "Pneumonia", Guid.NewGuid(), DateTime.UtcNow).Value;
+
+    private static WardMedicalRecord CompleteRecord(Admission admission)
+        => WardMedicalRecord.Create(admission.Id, Guid.NewGuid(), DateTime.UtcNow,
+            null, null, null, null, null, null, null,
+            "Fever", "Crackles", "Community-acquired pneumonia", "Amoxicillin 1g TDS x5d").Value;
+
+    private static WardMedicalRecord IncompleteRecord(Admission admission)
+        => WardMedicalRecord.Create(admission.Id, Guid.NewGuid(), DateTime.UtcNow,
+            null, null, null, null, null, null, null,
+            "Fever", "Crackles", null, null).Value;
 
     [Fact]
     public void Admit_publishes_patient_admitted_event()
@@ -19,11 +29,24 @@ public class AdmissionTests
     }
 
     [Fact]
-    public void Discharge_publishes_event_and_sets_timestamp()
+    public void Discharge_requires_complete_medical_record_and_cleared_bill()
     {
         var admission = NewAdmission();
-        var result = admission.Discharge(DateTime.UtcNow);
 
+        // No records yet → discharge blocked.
+        var blocked = admission.Discharge(billCleared: true, DateTime.UtcNow);
+        Assert.True(blocked.IsFailure);
+
+        // Incomplete record still blocks.
+        admission.AddMedicalRecord(IncompleteRecord(admission));
+        Assert.True(admission.Discharge(billCleared: true, DateTime.UtcNow).IsFailure);
+
+        // Complete record but unpaid bill still blocks.
+        admission.AddMedicalRecord(CompleteRecord(admission));
+        Assert.True(admission.Discharge(billCleared: false, DateTime.UtcNow).IsFailure);
+
+        // Complete record + cleared bill → success.
+        var result = admission.Discharge(billCleared: true, DateTime.UtcNow);
         Assert.True(result.IsSuccess);
         Assert.Equal(AdmissionStatus.Discharged, admission.Status);
         Assert.NotNull(admission.DischargedAtUtc);
@@ -34,15 +57,45 @@ public class AdmissionTests
     public void Cannot_discharge_twice()
     {
         var admission = NewAdmission();
-        admission.Discharge(DateTime.UtcNow);
-        Assert.True(admission.Discharge(DateTime.UtcNow).IsFailure);
+        admission.AddMedicalRecord(CompleteRecord(admission));
+        admission.Discharge(billCleared: true, DateTime.UtcNow);
+        Assert.True(admission.Discharge(billCleared: true, DateTime.UtcNow).IsFailure);
     }
 
     [Fact]
     public void Cannot_add_note_to_discharged()
     {
         var admission = NewAdmission();
-        admission.Discharge(DateTime.UtcNow);
+        admission.AddMedicalRecord(CompleteRecord(admission));
+        admission.Discharge(billCleared: true, DateTime.UtcNow);
         Assert.True(admission.AddWardNote("note", Guid.NewGuid(), DateTime.UtcNow).IsFailure);
+    }
+
+    [Fact]
+    public void Cannot_add_medical_record_to_discharged()
+    {
+        var admission = NewAdmission();
+        admission.AddMedicalRecord(CompleteRecord(admission));
+        admission.Discharge(billCleared: true, DateTime.UtcNow);
+
+        Assert.True(admission.AddMedicalRecord(CompleteRecord(admission)).IsFailure);
+    }
+}
+
+public class WardTests
+{
+    [Fact]
+    public void Ward_requires_name_and_positive_beds()
+    {
+        Assert.True(Ward.Create(FacilityId.New(), " ", WardType.General, 10).IsFailure);
+        Assert.True(Ward.Create(FacilityId.New(), "General", WardType.General, 0).IsFailure);
+    }
+
+    [Fact]
+    public void Ward_can_deactivate()
+    {
+        var ward = Ward.Create(FacilityId.New(), "ICU", WardType.Icu, 6).Value;
+        ward.Deactivate();
+        Assert.False(ward.IsActive);
     }
 }

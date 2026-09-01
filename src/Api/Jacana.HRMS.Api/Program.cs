@@ -82,6 +82,8 @@ builder.Services.AddSingleton<IUserIdentityLookup>(_ =>
     new UserIdentityLookup(connectionString));
 builder.Services.AddSingleton<IUserRoleLookup>(_ =>
     new UserRoleLookup(connectionString));
+builder.Services.AddSingleton<IBillingStatusLookup>(_ =>
+    new BillingStatusLookup(connectionString));
 builder.Services.AddSingleton<IValueEncryptor>(_ =>
     new Jacana.SharedKernel.Infrastructure.Security.AesGcmValueEncryptor(
         builder.Configuration["Security:EncryptionKey"]

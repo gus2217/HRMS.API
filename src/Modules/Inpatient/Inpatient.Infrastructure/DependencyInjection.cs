@@ -19,6 +19,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, DbContextUnitOfWork<InpatientDbContext>>();
         services.AddScoped<IAdmissionRepository, AdmissionRepository>();
+        services.AddScoped<IWardRepository, WardRepository>();
 
         return services;
     }

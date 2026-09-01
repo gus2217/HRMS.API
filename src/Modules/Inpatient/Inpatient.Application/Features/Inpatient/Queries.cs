@@ -5,6 +5,9 @@ using Jacana.SharedKernel.Domain;
 
 namespace Jacana.Inpatient.Application.Features.Inpatient;
 
+public sealed record GetWardsQuery(bool ActiveOnly = false)
+    : IQuery<Result<IReadOnlyList<WardDto>>>;
+
 public sealed record GetAdmissionQuery(Guid AdmissionId)
     : IQuery<Result<AdmissionDetailDto>>;
 
