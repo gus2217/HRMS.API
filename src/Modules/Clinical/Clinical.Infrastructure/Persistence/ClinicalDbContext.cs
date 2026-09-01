@@ -17,6 +17,9 @@ public sealed class ClinicalDbContext : DbContext
     public DbSet<VitalSign> VitalSigns => Set<VitalSign>();
     public DbSet<Immunization> Immunizations => Set<Immunization>();
     public DbSet<Condition> Conditions => Set<Condition>();
+    public DbSet<PatientFlag> PatientFlags => Set<PatientFlag>();
+    public DbSet<PatientAttachment> PatientAttachments => Set<PatientAttachment>();
+    public DbSet<DiagnosticOrder> DiagnosticOrders => Set<DiagnosticOrder>();
     public DbSet<ClinicalDocumentation> ClinicalDocumentations => Set<ClinicalDocumentation>();
     public DbSet<Referral> Referrals => Set<Referral>();
     public DbSet<QueueEntry> QueueEntries => Set<QueueEntry>();

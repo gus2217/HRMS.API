@@ -73,6 +73,9 @@ builder.Services.AddOpenTelemetry()
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, CurrentUserService>();
+builder.Services.AddSingleton<IFileStorage>(_ =>
+    new LocalFileStorage(builder.Configuration["Storage:AttachmentsPath"]
+        ?? Path.Combine(builder.Environment.ContentRootPath, "attachments")));
 builder.Services.AddSingleton<IPatientIdentityLookup>(_ =>
     new PatientIdentityLookup(connectionString));
 builder.Services.AddSingleton<IUserIdentityLookup>(_ =>
@@ -204,6 +207,7 @@ app.MapIdentityEndpoints();
 app.MapPatientEndpoints();
 app.MapClinicalEndpoints();
 app.MapPatientClinicalEndpoints();
+app.MapFlagsAttachmentsOrdersEndpoints();
 app.MapQueueEndpoints();
 app.MapAppointmentEndpoints();
 app.MapInventoryEndpoints();
