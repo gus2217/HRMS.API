@@ -48,6 +48,22 @@ public sealed class LabOrder : AggregateRoot<Guid>
     }
 
     /// <summary>
+    /// Cancels an order that has not yet been resulted (e.g. ordered in error or
+    /// no longer clinically indicated). Only pending/in-progress orders can be
+    /// cancelled; completed orders must go through clinical review instead.
+    /// </summary>
+    public Result Cancel(Guid cancelledByUserId, DateTime cancelledAtUtc, string? reason = null)
+    {
+        if (Status == LabOrderStatus.Completed)
+            return Error.InvalidOperation("Cannot cancel a completed lab order.");
+        if (Status == LabOrderStatus.Cancelled)
+            return Error.InvalidOperation("Lab order is already cancelled.");
+
+        Status = LabOrderStatus.Cancelled;
+        return Result.Success();
+    }
+
+    /// <summary>
     /// Publishes <see cref="LabOrderCreatedDomainEvent"/> (delivered via the outbox
     /// to the Billing module for auto-billing). Call after all tests are attached.
     /// </summary>

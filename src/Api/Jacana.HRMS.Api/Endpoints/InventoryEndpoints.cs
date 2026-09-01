@@ -25,6 +25,9 @@ public static class InventoryEndpoints
         group.MapPost("/drugs", CreateDrugAsync)
             .RequireAuthorization(Permissions.Inventory.Receive);
 
+        group.MapPut("/drugs/{id:guid}", UpdateDrugAsync)
+            .RequireAuthorization(Permissions.Inventory.Receive);
+
         group.MapPost("/stock/receive", ReceiveStockAsync)
             .RequireAuthorization(Permissions.Inventory.Receive);
 
@@ -53,6 +56,14 @@ public static class InventoryEndpoints
         var result = await sender.Send(new CreateDrugCommand(
             request.Code, request.Name, request.Category, request.Form, request.UnitPrice, request.ReorderLevel), ct);
         return result.IsSuccess ? Results.Created($"/api/v1/inventory/drugs/{result.Value.Id}", result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> UpdateDrugAsync(
+        Guid id, UpdateDrugRequestDto request, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new UpdateDrugCommand(
+            id, request.Name, request.Category, request.Form, request.UnitPrice, request.ReorderLevel), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 
     private static async Task<IResult> ReceiveStockAsync(

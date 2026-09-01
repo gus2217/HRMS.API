@@ -31,7 +31,7 @@ public sealed record PatientDetailDto(
     IReadOnlyList<ConsentDto> Consents,
     IReadOnlyList<NextOfKinDto> NextOfKin);
 
-public sealed record AllergyDto(string Substance, string Severity, string? Notes);
+public sealed record AllergyDto(Guid Id, string Substance, string Severity, string? Notes);
 public sealed record ConsentDto(string Type, bool Granted, DateTime RecordedAtUtc);
 public sealed record NextOfKinDto(string FullName, string Relationship, string? Phone);
 

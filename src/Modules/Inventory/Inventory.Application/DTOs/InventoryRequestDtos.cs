@@ -13,3 +13,5 @@ public sealed record ReceiveStockRequestDto(
     string? Reference);
 
 public sealed record AdjustStockRequestDto(Guid StockBatchId, int NewQuantity, string? Reason);
+
+public sealed record UpdateDrugRequestDto(string Name, string Category, string Form, decimal UnitPrice, int ReorderLevel);

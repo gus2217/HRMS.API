@@ -28,6 +28,9 @@ public static class LaboratoryEndpoints
         group.MapPost("/orders/{id:guid}/results", RecordResultAsync)
             .RequireAuthorization(Permissions.Lab.RecordResult);
 
+        group.MapPost("/orders/{id:guid}/cancel", CancelLabOrderAsync)
+            .RequireAuthorization(Permissions.Lab.Order);
+
         return app;
     }
 
@@ -66,6 +69,13 @@ public static class LaboratoryEndpoints
         var result = await sender.Send(new RecordLabResultCommand(
             id, request.TestItemId, request.ResultValue, request.ResultUnit,
             request.ReferenceRange, request.IsAbnormal), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> CancelLabOrderAsync(
+        Guid id, CancelLabOrderRequestDto request, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new CancelLabOrderCommand(id, request.Reason), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

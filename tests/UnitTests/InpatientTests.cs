@@ -1,4 +1,5 @@
 using Jacana.Inpatient.Domain;
+using Jacana.Laboratory.Domain;
 using Jacana.SharedKernel.Domain;
 using Xunit;
 
@@ -132,4 +133,33 @@ public class AdmissionTransferTests
         => WardMedicalRecord.Create(admission.Id, Guid.NewGuid(), DateTime.UtcNow,
             null, null, null, null, null, null, null,
             "Fever", "Crackles", "Community-acquired pneumonia", "Amoxicillin 1g TDS x5d").Value;
+}
+
+public class LabOrderCancelTests
+{
+    [Fact]
+    public void Lab_order_can_be_cancelled_when_pending()
+    {
+        var order = LabOrder.Create(Guid.NewGuid(), FacilityId.New(), Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), DateTime.UtcNow).Value;
+        order.AddTest("FBC", "Full Blood Count");
+
+        var result = order.Cancel(Guid.NewGuid(), DateTime.UtcNow, "Ordered in error");
+        Assert.True(result.IsSuccess);
+        Assert.Equal(LabOrderStatus.Cancelled, order.Status);
+    }
+
+    [Fact]
+    public void Completed_lab_order_cannot_be_cancelled()
+    {
+        var order = LabOrder.Create(Guid.NewGuid(), FacilityId.New(), Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), DateTime.UtcNow).Value;
+        var testId = Guid.NewGuid();
+        // mark complete by recording the only test
+        order.AddTest("FBC", "Full Blood Count");
+        var t = order.Tests.First();
+        order.RecordTestResult(t.Id, "12.5", "g/dL", null, false, Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.True(order.Cancel(Guid.NewGuid(), DateTime.UtcNow).IsFailure);
+    }
 }

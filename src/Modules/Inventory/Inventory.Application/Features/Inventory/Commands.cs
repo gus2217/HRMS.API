@@ -13,6 +13,15 @@ public sealed record CreateDrugCommand(
     int ReorderLevel)
     : ICommand<Result<DrugCatalogDto>>;
 
+public sealed record UpdateDrugCommand(
+    Guid DrugId,
+    string Name,
+    string Category,
+    string Form,
+    decimal UnitPrice,
+    int ReorderLevel)
+    : ICommand<Result<DrugCatalogDto>>;
+
 public sealed record ReceiveStockCommand(
     Guid DrugId,
     string BatchNumber,

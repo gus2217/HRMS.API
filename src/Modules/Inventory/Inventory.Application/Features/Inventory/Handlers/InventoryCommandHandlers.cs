@@ -28,6 +28,27 @@ public sealed class CreateDrugCommandHandler(
     }
 }
 
+public sealed class UpdateDrugCommandHandler(IDrugRepository drugs)
+    : IRequestHandler<UpdateDrugCommand, Result<DrugCatalogDto>>
+{
+    public async Task<Result<DrugCatalogDto>> Handle(UpdateDrugCommand request, CancellationToken ct)
+    {
+        var drug = await drugs.GetByIdAsync(request.DrugId, ct);
+        if (drug is null) return Error.NotFound("Drug not found.");
+
+        var price = Money.Create(request.UnitPrice);
+        if (price.IsFailure) return price.Error;
+
+        var result = drug.UpdateCatalog(request.Name, request.Category, request.Form, price.Value, request.ReorderLevel);
+        if (result.IsFailure) return result.Error;
+
+        await drugs.UpdateAsync(drug, ct);
+
+        return new DrugCatalogDto(drug.Id, drug.Code, drug.Name, drug.Category,
+            drug.Form, drug.UnitPrice.Amount, drug.ReorderLevel, drug.Status.ToString(), 0);
+    }
+}
+
 public sealed class ReceiveStockCommandHandler(
     IStockBatchRepository batches,
     IDrugRepository drugs,

@@ -20,3 +20,8 @@ public sealed record RecordLabResultCommand(
     string? ReferenceRange,
     bool? IsAbnormal)
     : ICommand<Result<LabOrderDetailDto>>;
+
+public sealed record CancelLabOrderCommand(
+    Guid LabOrderId,
+    string? Reason)
+    : ICommand<Result<LabOrderDetailDto>>;

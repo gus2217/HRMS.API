@@ -22,6 +22,9 @@ public static class BillingEndpoints
         group.MapGet("/invoices/{id:guid}", GetInvoiceAsync)
             .RequireAuthorization(Permissions.Billing.View);
 
+        group.MapPost("/invoices/{id:guid}/cancel", CancelInvoiceAsync)
+            .RequireAuthorization(Permissions.Billing.IssueInvoice);
+
         group.MapPost("/payments", RecordPaymentAsync)
             .RequireAuthorization(Permissions.Billing.RecordPayment);
 
@@ -56,6 +59,12 @@ public static class BillingEndpoints
     private static async Task<IResult> GetInvoiceAsync(Guid id, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new GetInvoiceQuery(id), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> CancelInvoiceAsync(Guid id, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new CancelInvoiceCommand(id), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

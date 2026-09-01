@@ -34,6 +34,9 @@ public static class PatientEndpoints
         group.MapPost("/{id:guid}/allergies", RegisterAllergyAsync)
             .RequireAuthorization(Permissions.Patients.Update);
 
+        group.MapDelete("/{id:guid}/allergies/{allergyId:guid}", RemoveAllergyAsync)
+            .RequireAuthorization(Permissions.Patients.Update);
+
         group.MapPost("/{id:guid}/consents", RecordConsentAsync)
             .RequireAuthorization(Permissions.Patients.Update);
 
@@ -93,6 +96,13 @@ public static class PatientEndpoints
     {
         var result = await sender.Send(new RegisterAllergyCommand(
             id, request.Substance, request.Severity, request.Notes), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> RemoveAllergyAsync(
+        Guid id, Guid allergyId, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new RemoveAllergyCommand(id, allergyId), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

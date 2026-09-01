@@ -15,3 +15,5 @@ public sealed record RecordLabResultRequestDto(
     string? ResultUnit,
     string? ReferenceRange,
     bool? IsAbnormal);
+
+public sealed record CancelLabOrderRequestDto(string? Reason);

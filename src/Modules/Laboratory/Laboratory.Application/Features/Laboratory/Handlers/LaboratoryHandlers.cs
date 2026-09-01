@@ -56,6 +56,25 @@ public sealed class RecordLabResultCommandHandler(
     }
 }
 
+public sealed class CancelLabOrderCommandHandler(
+    ILabOrderRepository orders,
+    ICurrentUser currentUser,
+    IClock clock)
+    : IRequestHandler<CancelLabOrderCommand, Result<LabOrderDetailDto>>
+{
+    public async Task<Result<LabOrderDetailDto>> Handle(CancelLabOrderCommand request, CancellationToken ct)
+    {
+        var order = await orders.GetByIdAsync(request.LabOrderId, ct);
+        if (order is null) return Error.NotFound("Lab order not found.");
+
+        var result = order.Cancel(currentUser.UserId, clock.UtcNow, request.Reason);
+        if (result.IsFailure) return result.Error;
+
+        await orders.UpdateAsync(order, ct);
+        return LabOrderMapper.ToDetail(order);
+    }
+}
+
 public sealed class GetLabOrderQueryHandler(ILabOrderRepository orders)
     : IRequestHandler<GetLabOrderQuery, Result<LabOrderDetailDto>>
 {

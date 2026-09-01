@@ -41,6 +41,11 @@ public sealed record RegisterAllergyCommand(
     string? Notes)
     : ICommand<Result<PatientDetailDto>>;
 
+public sealed record RemoveAllergyCommand(
+    Guid PatientId,
+    Guid AllergyId)
+    : ICommand<Result<PatientDetailDto>>;
+
 public sealed record RecordConsentCommand(
     Guid PatientId,
     Domain.ConsentType Type,

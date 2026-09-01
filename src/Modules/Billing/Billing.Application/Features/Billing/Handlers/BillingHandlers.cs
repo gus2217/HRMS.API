@@ -74,6 +74,30 @@ public sealed class RecordPaymentCommandHandler(
     }
 }
 
+public sealed class CancelInvoiceCommandHandler(IInvoiceRepository invoices)
+    : IRequestHandler<CancelInvoiceCommand, Result<InvoiceDetailDto>>
+{
+    public async Task<Result<InvoiceDetailDto>> Handle(CancelInvoiceCommand request, CancellationToken ct)
+    {
+        var invoice = await invoices.GetByIdAsync(request.InvoiceId, ct);
+        if (invoice is null) return Error.NotFound("Invoice not found.");
+
+        var result = invoice.Cancel();
+        if (result.IsFailure) return result.Error;
+
+        await invoices.UpdateAsync(invoice, ct);
+
+        // Map from the in-memory aggregate — the unit-of-work transaction has not
+        // committed yet, so a re-query would return the stale pre-cancel status.
+        return new InvoiceDetailDto(
+            invoice.Id, invoice.PatientId, invoice.ConsultationId, invoice.Status.ToString(),
+            invoice.TotalAmount.Amount, invoice.PrimaryPaymentMethod?.ToString(), invoice.CreatedAtUtc,
+            invoice.Lines.Select(l => new InvoiceLineDto(
+                l.Id, l.ServiceCode, l.Description, l.Quantity,
+                l.UnitPrice.Amount, l.LineTotal.Amount, l.Status.ToString())).ToArray());
+    }
+}
+
 public sealed class RecordMPesaCallbackCommandHandler(
     IPaymentRepository payments,
     IInvoiceRepository invoices,

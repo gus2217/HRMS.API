@@ -58,6 +58,20 @@ public sealed class DeactivateWardCommandHandler(IWardRepository wards)
     }
 }
 
+public sealed class ReactivateWardCommandHandler(IWardRepository wards)
+    : IRequestHandler<ReactivateWardCommand, Result<WardDto>>
+{
+    public async Task<Result<WardDto>> Handle(ReactivateWardCommand request, CancellationToken ct)
+    {
+        var ward = await wards.GetByIdAsync(request.WardId, ct);
+        if (ward is null) return Error.NotFound("Ward not found.");
+
+        ward.Reactivate();
+        await wards.UpdateAsync(ward, ct);
+        return CreateWardCommandHandler.MapWard(ward);
+    }
+}
+
 public sealed class GetWardsQueryHandler(IWardRepository wards)
     : IRequestHandler<GetWardsQuery, Result<IReadOnlyList<WardDto>>>
 {

@@ -47,6 +47,22 @@ public sealed class RegisterAllergyCommandHandler(IPatientRepository patients)
     }
 }
 
+public sealed class RemoveAllergyCommandHandler(IPatientRepository patients)
+    : IRequestHandler<RemoveAllergyCommand, Result<PatientDetailDto>>
+{
+    public async Task<Result<PatientDetailDto>> Handle(RemoveAllergyCommand request, CancellationToken ct)
+    {
+        var patient = await patients.GetByIdAsync(request.PatientId, ct);
+        if (patient is null) return Error.NotFound("Patient not found.");
+
+        var result = patient.RemoveAllergy(request.AllergyId);
+        if (result.IsFailure) return result.Error;
+
+        await patients.UpdateAsync(patient, ct);
+        return PatientMapper.ToDetail(patient);
+    }
+}
+
 public sealed class RecordConsentCommandHandler(IPatientRepository patients)
     : IRequestHandler<RecordConsentCommand, Result<PatientDetailDto>>
 {

@@ -16,6 +16,9 @@ public sealed record UpdateWardCommand(Guid WardId, string Name, WardType Type, 
 public sealed record DeactivateWardCommand(Guid WardId)
     : ICommand<Result<WardDto>>;
 
+public sealed record ReactivateWardCommand(Guid WardId)
+    : ICommand<Result<WardDto>>;
+
 // ── Admissions ───────────────────────────────────────────────────────────
 
 public sealed record AdmitPatientCommand(

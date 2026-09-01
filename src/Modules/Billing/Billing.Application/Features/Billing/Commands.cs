@@ -21,6 +21,9 @@ public sealed record RecordPaymentCommand(
     string ProviderTransactionReference)
     : ICommand<Result<PaymentReceiptDto>>;
 
+public sealed record CancelInvoiceCommand(Guid InvoiceId)
+    : ICommand<Result<InvoiceDetailDto>>;
+
 public sealed record RecordMPesaCallbackCommand(MPesaCallbackDto Callback)
     : ICommand<Result<PaymentReceiptDto>>;
 

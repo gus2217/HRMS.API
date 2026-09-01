@@ -33,6 +33,9 @@ public static class InpatientEndpoints
         group.MapPost("/wards/{id:guid}/deactivate", DeactivateWardAsync)
             .RequireAuthorization(Permissions.Users.View);
 
+        group.MapPost("/wards/{id:guid}/reactivate", ReactivateWardAsync)
+            .RequireAuthorization(Permissions.Users.View);
+
         // ── Admissions ──────────────────────────────────────────────────────
         group.MapPost("/admissions", AdmitAsync)
             .RequireAuthorization(Permissions.Clinical.Consult);
@@ -101,6 +104,12 @@ public static class InpatientEndpoints
     private static async Task<IResult> DeactivateWardAsync(Guid id, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new DeactivateWardCommand(id), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> ReactivateWardAsync(Guid id, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new ReactivateWardCommand(id), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

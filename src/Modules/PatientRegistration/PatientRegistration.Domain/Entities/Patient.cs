@@ -104,6 +104,14 @@ public sealed class Patient : AggregateRoot<Guid>
         return Result.Success();
     }
 
+    public Result RemoveAllergy(Guid allergyId)
+    {
+        var allergy = _allergies.FirstOrDefault(a => a.Id == allergyId);
+        if (allergy is null) return Error.NotFound("Allergy not found.");
+        _allergies.Remove(allergy);
+        return Result.Success();
+    }
+
     public Result RecordConsent(ConsentType type, bool granted, Guid recordedByUserId, DateTime recordedAtUtc)
     {
         _consents.Add(ConsentRecord.Create(type, granted, recordedByUserId, recordedAtUtc));
