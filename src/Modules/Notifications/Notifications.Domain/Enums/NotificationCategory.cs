@@ -9,6 +9,7 @@ public enum NotificationCategory
     PrescriptionInitiated,
     PatientAdmitted,
     PatientDischarged,
+    PatientTransferred,
     ReferralCreated,
     System
 }

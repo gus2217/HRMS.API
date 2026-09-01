@@ -99,3 +99,37 @@ public class WardTests
         Assert.False(ward.IsActive);
     }
 }
+
+public class AdmissionTransferTests
+{
+    [Fact]
+    public void Transfer_updates_ward_and_publishes_event()
+    {
+        var admission = NewAdmission();
+        var result = admission.Transfer(Guid.NewGuid(), "ICU", "Bed 2", DateTime.UtcNow);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("ICU", admission.WardName);
+        Assert.Equal("Bed 2", admission.BedNumber);
+        Assert.Contains(admission.DomainEvents, e => e is PatientTransferredDomainEvent);
+    }
+
+    [Fact]
+    public void Cannot_transfer_discharged_admission()
+    {
+        var admission = NewAdmission();
+        admission.AddMedicalRecord(CompleteRecord(admission));
+        admission.Discharge(billCleared: true, DateTime.UtcNow);
+
+        Assert.True(admission.Transfer(Guid.NewGuid(), "ICU", "Bed 2", DateTime.UtcNow).IsFailure);
+    }
+
+    private static Admission NewAdmission()
+        => Admission.Admit(Guid.NewGuid(), FacilityId.New(), Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), "Ward A", "Bed 1", "Pneumonia", Guid.NewGuid(), DateTime.UtcNow).Value;
+
+    private static WardMedicalRecord CompleteRecord(Admission admission)
+        => WardMedicalRecord.Create(admission.Id, Guid.NewGuid(), DateTime.UtcNow,
+            null, null, null, null, null, null, null,
+            "Fever", "Crackles", "Community-acquired pneumonia", "Amoxicillin 1g TDS x5d").Value;
+}

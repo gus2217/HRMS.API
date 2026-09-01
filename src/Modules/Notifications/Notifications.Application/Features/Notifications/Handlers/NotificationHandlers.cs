@@ -1,5 +1,6 @@
 using Jacana.Notifications.Application.Abstractions;
 using Jacana.Notifications.Application.DTOs;
+using Jacana.Notifications.Domain;
 using Jacana.SharedKernel.Application.Abstractions;
 using Jacana.SharedKernel.Application.Common;
 using Jacana.SharedKernel.Domain;
@@ -72,5 +73,59 @@ public sealed class MarkAllNotificationsReadCommandHandler(
     {
         var count = await notifications.MarkAllReadAsync(currentUser.UserId, clock.UtcNow, ct);
         return new UnreadNotificationCountDto(count);
+    }
+}
+
+// ── Preferences ────────────────────────────────────────────────────────────────
+
+public sealed class GetMyNotificationPreferencesQueryHandler(
+    INotificationPreferenceRepository preferences,
+    ICurrentUser currentUser)
+    : IRequestHandler<GetMyNotificationPreferencesQuery, Result<IReadOnlyList<NotificationPreferenceDto>>>
+{
+    public async Task<Result<IReadOnlyList<NotificationPreferenceDto>>> Handle(
+        GetMyNotificationPreferencesQuery request, CancellationToken ct)
+    {
+        var stored = await preferences.GetByUserAsync(currentUser.UserId, ct);
+        var byCategory = stored.ToDictionary(p => p.Category, p => p);
+
+        // Return every category; absent rows mean defaults-on.
+        var result = Enum.GetValues<NotificationCategory>()
+            .Select(cat => byCategory.TryGetValue(cat, out var p)
+                ? new NotificationPreferenceDto(cat.ToString(), p.InAppEnabled, p.SmsEnabled)
+                : new NotificationPreferenceDto(cat.ToString(), InAppEnabled: true, SmsEnabled: true))
+            .ToList();
+
+        return Result.Success<IReadOnlyList<NotificationPreferenceDto>>(result);
+    }
+}
+
+public sealed class UpdateNotificationPreferenceCommandHandler(
+    INotificationPreferenceRepository preferences,
+    ICurrentUser currentUser,
+    IClock clock)
+    : IRequestHandler<UpdateNotificationPreferenceCommand, Result<NotificationPreferenceDto>>
+{
+    public async Task<Result<NotificationPreferenceDto>> Handle(
+        UpdateNotificationPreferenceCommand request, CancellationToken ct)
+    {
+        var existing = await preferences.GetAsync(currentUser.UserId, request.Category, ct);
+        if (existing is null)
+        {
+            var created = NotificationPreference.Create(
+                currentUser.FacilityId, currentUser.UserId, request.Category,
+                request.InAppEnabled, request.SmsEnabled, clock.UtcNow);
+            if (created.IsFailure) return created.Error;
+            await preferences.AddAsync(created.Value, ct);
+        }
+        else
+        {
+            var updated = existing.Update(request.InAppEnabled, request.SmsEnabled, clock.UtcNow);
+            if (updated.IsFailure) return updated.Error;
+            await preferences.UpdateAsync(existing, ct);
+        }
+
+        return new NotificationPreferenceDto(
+            request.Category.ToString(), request.InAppEnabled, request.SmsEnabled);
     }
 }

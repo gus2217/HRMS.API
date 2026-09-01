@@ -2,6 +2,7 @@ using Jacana.Clinical.Domain;
 using Jacana.Inpatient.Domain;
 using Jacana.Laboratory.Domain;
 using Jacana.Notifications.Application.Abstractions;
+using Jacana.Notifications.Application.DTOs;
 using Jacana.Notifications.Domain;
 using Jacana.Pharmacy.Domain;
 using Jacana.SharedKernel.Application.Abstractions;
@@ -13,11 +14,13 @@ namespace Jacana.Notifications.Application.DomainEventHandlers;
 
 /// <summary>
 /// Domain-event → in-app notification fan-out. Each handler resolves the recipient
-/// user IDs (a specific clinician, or everyone in a role) and creates a
-/// <see cref="UserNotification"/> per recipient, then commits through the shared
-/// unit-of-work set — the same pattern the Billing auto-billing handlers use.
+/// user IDs (a specific clinician, or everyone in a role), filters them through the
+/// per-user delivery preferences (defaults-on), creates a <see cref="UserNotification"/>
+/// per recipient, commits through the shared unit-of-work set, then pushes the
+/// committed notifications to online recipients over SignalR.
 /// SMS/WhatsApp delivery is layered later on top of the same events via the
-/// <see cref="NotificationMessage"/> outbox.
+/// <see cref="NotificationMessage"/> outbox — the preference SmsEnabled flag is
+/// already persisted and will gate that channel without event changes.
 /// </summary>
 public static class NotificationRoles
 {
@@ -27,11 +30,39 @@ public static class NotificationRoles
     public const string LabTechnician = "LabTechnician";
 }
 
+/// <summary>Creates a notification, buffers it for push, and returns it.</summary>
+internal static class NotificationFanout
+{
+    public static async Task CreateAsync(
+        IUserNotificationRepository notifications,
+        List<UserNotification> buffer,
+        FacilityId facilityId,
+        Guid recipientUserId,
+        NotificationCategory category,
+        string title,
+        string message,
+        string entityType,
+        Guid? entityId,
+        DateTime createdAtUtc,
+        CancellationToken ct)
+    {
+        var n = UserNotification.Create(
+            facilityId, recipientUserId, category, title, message, entityType, entityId, createdAtUtc);
+        if (n.IsSuccess)
+        {
+            await notifications.AddAsync(n.Value, ct);
+            buffer.Add(n.Value);
+        }
+    }
+}
+
 // ── Consultation / appointment requested → clinic doctors ──────────────────────
 
 public sealed class ConsultationRequestedHandler(
     IUserNotificationRepository notifications,
     IUserRoleLookup roles,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
     IEnumerable<IUnitOfWork> unitsOfWork,
     IClock clock)
     : INotificationHandler<DomainEventNotification<ConsultationRequestedDomainEvent>>
@@ -40,24 +71,28 @@ public sealed class ConsultationRequestedHandler(
         DomainEventNotification<ConsultationRequestedDomainEvent> notification, CancellationToken ct)
     {
         var e = notification.DomainEvent;
-        var recipients = await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor, NotificationRoles.Nurse], ct);
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor, NotificationRoles.Nurse], ct),
+            NotificationCategory.ConsultationRequested, ct);
 
+        var created = new List<UserNotification>();
         foreach (var userId in recipients)
         {
-            var n = UserNotification.Create(
+            await NotificationFanout.CreateAsync(notifications, created,
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.ConsultationRequested,
                 "Consultation requested",
                 $"A patient has been queued for the {e.ClinicType} clinic.",
-                "Queue", e.QueueEntryId, clock.UtcNow);
-            if (n.IsSuccess) await notifications.AddAsync(n.Value, ct);
+                "Queue", e.QueueEntryId, clock.UtcNow, ct);
         }
-        await NotificationCommit.CommitAsync(unitsOfWork, ct);
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
 }
 
 public sealed class AppointmentRequestedHandler(
     IUserNotificationRepository notifications,
     IUserRoleLookup roles,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
     IEnumerable<IUnitOfWork> unitsOfWork,
     IClock clock)
     : INotificationHandler<DomainEventNotification<AppointmentRequestedDomainEvent>>
@@ -66,24 +101,28 @@ public sealed class AppointmentRequestedHandler(
         DomainEventNotification<AppointmentRequestedDomainEvent> notification, CancellationToken ct)
     {
         var e = notification.DomainEvent;
-        var recipients = await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor], ct);
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor], ct),
+            NotificationCategory.AppointmentRequested, ct);
 
+        var created = new List<UserNotification>();
         foreach (var userId in recipients)
         {
-            var n = UserNotification.Create(
+            await NotificationFanout.CreateAsync(notifications, created,
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.AppointmentRequested,
                 "Appointment booked",
                 $"A new appointment has been booked for the {e.ClinicType} clinic.",
-                "Appointment", e.AppointmentId, clock.UtcNow);
-            if (n.IsSuccess) await notifications.AddAsync(n.Value, ct);
+                "Appointment", e.AppointmentId, clock.UtcNow, ct);
         }
-        await NotificationCommit.CommitAsync(unitsOfWork, ct);
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
 }
 
 public sealed class AppointmentRequestRaisedHandler(
     IUserNotificationRepository notifications,
     IUserRoleLookup roles,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
     IEnumerable<IUnitOfWork> unitsOfWork,
     IClock clock)
     : INotificationHandler<DomainEventNotification<AppointmentRequestRaisedDomainEvent>>
@@ -92,18 +131,20 @@ public sealed class AppointmentRequestRaisedHandler(
         DomainEventNotification<AppointmentRequestRaisedDomainEvent> notification, CancellationToken ct)
     {
         var e = notification.DomainEvent;
-        var recipients = await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor], ct);
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor], ct),
+            NotificationCategory.AppointmentRequested, ct);
 
+        var created = new List<UserNotification>();
         foreach (var userId in recipients)
         {
-            var n = UserNotification.Create(
+            await NotificationFanout.CreateAsync(notifications, created,
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.AppointmentRequested,
                 "Appointment request",
                 $"Reception has raised an appointment request for the {e.ClinicType} clinic — please review.",
-                "AppointmentRequest", e.AppointmentRequestId, clock.UtcNow);
-            if (n.IsSuccess) await notifications.AddAsync(n.Value, ct);
+                "AppointmentRequest", e.AppointmentRequestId, clock.UtcNow, ct);
         }
-        await NotificationCommit.CommitAsync(unitsOfWork, ct);
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
 }
 
@@ -113,6 +154,8 @@ public sealed class AppointmentRequestRaisedHandler(
 public sealed class LabOrderPlacedHandler(
     IUserNotificationRepository notifications,
     IUserRoleLookup roles,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
     IEnumerable<IUnitOfWork> unitsOfWork,
     IClock clock)
     : INotificationHandler<DomainEventNotification<LabOrderCreatedDomainEvent>>
@@ -121,24 +164,28 @@ public sealed class LabOrderPlacedHandler(
         DomainEventNotification<LabOrderCreatedDomainEvent> notification, CancellationToken ct)
     {
         var e = notification.DomainEvent;
-        var recipients = await roles.GetUserIdsByRolesAsync([NotificationRoles.LabTechnician], ct);
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            await roles.GetUserIdsByRolesAsync([NotificationRoles.LabTechnician], ct),
+            NotificationCategory.LabResultReady, ct);
 
+        var created = new List<UserNotification>();
         foreach (var userId in recipients)
         {
-            var n = UserNotification.Create(
+            await NotificationFanout.CreateAsync(notifications, created,
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.LabResultReady,
                 "Lab order placed",
                 $"A lab order ({e.Tests.Count} test(s)) has been placed for this patient.",
-                "LabOrder", e.LabOrderId, clock.UtcNow);
-            if (n.IsSuccess) await notifications.AddAsync(n.Value, ct);
+                "LabOrder", e.LabOrderId, clock.UtcNow, ct);
         }
-        await NotificationCommit.CommitAsync(unitsOfWork, ct);
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
 }
 
 /// <summary>Lab order completed → notify the ordering clinician their results are in.</summary>
 public sealed class LabOrderCompletedHandler(
     IUserNotificationRepository notifications,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
     IEnumerable<IUnitOfWork> unitsOfWork,
     IClock clock)
     : INotificationHandler<DomainEventNotification<LabOrderCompletedDomainEvent>>
@@ -147,13 +194,19 @@ public sealed class LabOrderCompletedHandler(
         DomainEventNotification<LabOrderCompletedDomainEvent> notification, CancellationToken ct)
     {
         var e = notification.DomainEvent;
-        var n = UserNotification.Create(
-            FacilityId.From(e.FacilityId), e.OrderedByUserId, NotificationCategory.LabResultReady,
-            "Lab results ready",
-            "All tests on the lab order have been resulted — the results are ready for review.",
-            "LabOrder", e.LabOrderId, clock.UtcNow);
-        if (n.IsSuccess) await notifications.AddAsync(n.Value, ct);
-        await NotificationCommit.CommitAsync(unitsOfWork, ct);
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            [e.OrderedByUserId], NotificationCategory.LabResultReady, ct);
+
+        var created = new List<UserNotification>();
+        foreach (var userId in recipients)
+        {
+            await NotificationFanout.CreateAsync(notifications, created,
+                FacilityId.From(e.FacilityId), userId, NotificationCategory.LabResultReady,
+                "Lab results ready",
+                "All tests on the lab order have been resulted — the results are ready for review.",
+                "LabOrder", e.LabOrderId, clock.UtcNow, ct);
+        }
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
 }
 
@@ -163,6 +216,8 @@ public sealed class LabOrderCompletedHandler(
 public sealed class PrescriptionInitiatedHandler(
     IUserNotificationRepository notifications,
     IUserRoleLookup roles,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
     IEnumerable<IUnitOfWork> unitsOfWork,
     IClock clock)
     : INotificationHandler<DomainEventNotification<PrescriptionCreatedDomainEvent>>
@@ -171,18 +226,20 @@ public sealed class PrescriptionInitiatedHandler(
         DomainEventNotification<PrescriptionCreatedDomainEvent> notification, CancellationToken ct)
     {
         var e = notification.DomainEvent;
-        var recipients = await roles.GetUserIdsByRolesAsync([NotificationRoles.Pharmacist], ct);
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            await roles.GetUserIdsByRolesAsync([NotificationRoles.Pharmacist], ct),
+            NotificationCategory.PrescriptionInitiated, ct);
 
+        var created = new List<UserNotification>();
         foreach (var userId in recipients)
         {
-            var n = UserNotification.Create(
+            await NotificationFanout.CreateAsync(notifications, created,
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.PrescriptionInitiated,
                 "Prescription to dispense",
                 $"A new prescription ({e.Items.Count} item(s)) is awaiting dispensing.",
-                "Prescription", e.PrescriptionId, clock.UtcNow);
-            if (n.IsSuccess) await notifications.AddAsync(n.Value, ct);
+                "Prescription", e.PrescriptionId, clock.UtcNow, ct);
         }
-        await NotificationCommit.CommitAsync(unitsOfWork, ct);
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
 }
 
@@ -191,6 +248,8 @@ public sealed class PrescriptionInitiatedHandler(
 public sealed class PatientAdmittedHandler(
     IUserNotificationRepository notifications,
     IUserRoleLookup roles,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
     IEnumerable<IUnitOfWork> unitsOfWork,
     IClock clock)
     : INotificationHandler<DomainEventNotification<PatientAdmittedDomainEvent>>
@@ -199,24 +258,28 @@ public sealed class PatientAdmittedHandler(
         DomainEventNotification<PatientAdmittedDomainEvent> notification, CancellationToken ct)
     {
         var e = notification.DomainEvent;
-        var recipients = await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor, NotificationRoles.Nurse], ct);
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor, NotificationRoles.Nurse], ct),
+            NotificationCategory.PatientAdmitted, ct);
 
+        var created = new List<UserNotification>();
         foreach (var userId in recipients)
         {
-            var n = UserNotification.Create(
+            await NotificationFanout.CreateAsync(notifications, created,
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.PatientAdmitted,
                 "Patient admitted",
                 $"A patient has been admitted to {e.WardName}.",
-                "Admission", e.AdmissionId, clock.UtcNow);
-            if (n.IsSuccess) await notifications.AddAsync(n.Value, ct);
+                "Admission", e.AdmissionId, clock.UtcNow, ct);
         }
-        await NotificationCommit.CommitAsync(unitsOfWork, ct);
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
 }
 
 public sealed class PatientDischargedHandler(
     IUserNotificationRepository notifications,
     IUserRoleLookup roles,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
     IEnumerable<IUnitOfWork> unitsOfWork,
     IClock clock)
     : INotificationHandler<DomainEventNotification<PatientDischargedDomainEvent>>
@@ -225,33 +288,78 @@ public sealed class PatientDischargedHandler(
         DomainEventNotification<PatientDischargedDomainEvent> notification, CancellationToken ct)
     {
         var e = notification.DomainEvent;
-        var recipients = await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor, NotificationRoles.Nurse], ct);
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor, NotificationRoles.Nurse], ct),
+            NotificationCategory.PatientDischarged, ct);
 
+        var created = new List<UserNotification>();
         foreach (var userId in recipients)
         {
-            var n = UserNotification.Create(
+            await NotificationFanout.CreateAsync(notifications, created,
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.PatientDischarged,
                 "Patient discharged",
                 "A patient has been discharged.",
-                "Admission", e.AdmissionId, clock.UtcNow);
-            if (n.IsSuccess) await notifications.AddAsync(n.Value, ct);
+                "Admission", e.AdmissionId, clock.UtcNow, ct);
         }
-        await NotificationCommit.CommitAsync(unitsOfWork, ct);
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
+    }
+}
+
+public sealed class PatientTransferredHandler(
+    IUserNotificationRepository notifications,
+    IUserRoleLookup roles,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
+    IEnumerable<IUnitOfWork> unitsOfWork,
+    IClock clock)
+    : INotificationHandler<DomainEventNotification<PatientTransferredDomainEvent>>
+{
+    public async Task Handle(
+        DomainEventNotification<PatientTransferredDomainEvent> notification, CancellationToken ct)
+    {
+        var e = notification.DomainEvent;
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            await roles.GetUserIdsByRolesAsync([NotificationRoles.Doctor, NotificationRoles.Nurse], ct),
+            NotificationCategory.PatientTransferred, ct);
+
+        var created = new List<UserNotification>();
+        foreach (var userId in recipients)
+        {
+            await NotificationFanout.CreateAsync(notifications, created,
+                FacilityId.From(e.FacilityId), userId, NotificationCategory.PatientTransferred,
+                "Patient transferred",
+                $"A patient has been transferred from {e.FromWardName} to {e.ToWardName}.",
+                "Admission", e.AdmissionId, clock.UtcNow, ct);
+        }
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
 }
 
 internal static class NotificationCommit
 {
     /// <summary>
-    /// Commits every unit of work with tracked changes. Mirrors the Billing
-    /// AutoBilling pattern — each module registers its own IUnitOfWork, so a
-    /// plain single-IUnitOfWork injection would resolve the wrong context.
+    /// Commits every unit of work with tracked changes, then pushes the committed
+    /// notifications to online recipients. Mirrors the Billing AutoBilling pattern —
+    /// each module registers its own IUnitOfWork, so a plain single-IUnitOfWork
+    /// injection would resolve the wrong context.
     /// </summary>
-    public static Task CommitAsync(IEnumerable<IUnitOfWork> unitsOfWork, CancellationToken ct)
+    public static async Task CommitAndPushAsync(
+        IEnumerable<IUnitOfWork> unitsOfWork,
+        INotificationPusher pusher,
+        IReadOnlyList<UserNotification> created,
+        CancellationToken ct)
     {
         var tasks = unitsOfWork
             .Where(u => u.HasChanges)
             .Select(u => u.SaveChangesAsync(ct));
-        return Task.WhenAll(tasks);
+        await Task.WhenAll(tasks);
+
+        foreach (var n in created)
+        {
+            var dto = new UserNotificationDto(
+                n.Id, n.Category.ToString(), n.Title, n.Message,
+                n.EntityType, n.EntityId, n.IsRead, n.CreatedAtUtc);
+            await pusher.PushAsync(n.RecipientUserId, dto, ct);
+        }
     }
 }

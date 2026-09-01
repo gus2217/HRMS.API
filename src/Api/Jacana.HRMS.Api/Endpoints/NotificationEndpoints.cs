@@ -1,4 +1,6 @@
 using Jacana.Notifications.Application.Features.Notifications;
+using Jacana.Notifications.Application.DTOs;
+using Jacana.Notifications.Domain;
 using Jacana.SharedKernel.Domain;
 using MediatR;
 
@@ -19,6 +21,10 @@ public static class NotificationEndpoints
         group.MapGet("/unread-count", GetUnreadCountAsync).RequireAuthorization();
         group.MapPost("/{id:guid}/read", MarkReadAsync).RequireAuthorization();
         group.MapPost("/read-all", MarkAllReadAsync).RequireAuthorization();
+
+        // ── Preferences (per-user, per-category; SMS-ready) ────────────────
+        group.MapGet("/preferences", GetPreferencesAsync).RequireAuthorization();
+        group.MapPut("/preferences", UpdatePreferenceAsync).RequireAuthorization();
 
         return app;
     }
@@ -45,6 +51,25 @@ public static class NotificationEndpoints
     private static async Task<IResult> MarkAllReadAsync(ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new MarkAllNotificationsReadCommand(), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    // ── Preferences ──────────────────────────────────────────────────────────
+
+    private static async Task<IResult> GetPreferencesAsync(ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new GetMyNotificationPreferencesQuery(), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> UpdatePreferenceAsync(
+        UpdateNotificationPreferenceRequestDto request, ISender sender, CancellationToken ct)
+    {
+        if (!Enum.TryParse<NotificationCategory>(request.Category, ignoreCase: true, out var category))
+            return Results.BadRequest(new { error = "Notification category is invalid." });
+
+        var result = await sender.Send(new UpdateNotificationPreferenceCommand(
+            category, request.InAppEnabled, request.SmsEnabled), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

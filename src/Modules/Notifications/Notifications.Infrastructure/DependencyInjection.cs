@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, DbContextUnitOfWork<NotificationsDbContext>>();
         services.AddScoped<INotificationMessageRepository, NotificationMessageRepository>();
         services.AddScoped<IUserNotificationRepository, UserNotificationRepository>();
+        services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
 
         return services;
     }

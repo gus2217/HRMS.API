@@ -11,6 +11,7 @@ public sealed class NotificationsDbContext : DbContext
 
     public DbSet<NotificationMessage> NotificationMessages => Set<NotificationMessage>();
     public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 

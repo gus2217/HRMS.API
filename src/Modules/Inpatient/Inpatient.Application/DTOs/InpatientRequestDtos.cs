@@ -28,3 +28,5 @@ public sealed record AddMedicalRecordRequestDto(
     string? Objective,
     string? Assessment,
     string? Plan);
+
+public sealed record TransferPatientRequestDto(Guid TargetWardId, string BedNumber);

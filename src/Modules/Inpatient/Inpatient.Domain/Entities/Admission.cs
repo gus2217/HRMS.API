@@ -84,6 +84,35 @@ public sealed class Admission : AggregateRoot<Guid>
     }
 
     /// <summary>
+    /// Transfers the patient to another ward/bed. Guarded: only active admissions
+    /// can be moved, and the transfer is recorded as a ward note + domain event
+    /// (which the Notifications module fans out to doctors/nurses).
+    /// </summary>
+    public Result Transfer(Guid wardId, string wardName, string bedNumber, DateTime transferredAtUtc)
+    {
+        if (Status == AdmissionStatus.Discharged)
+            return Error.InvalidOperation("Cannot transfer a discharged admission.");
+        if (wardId == Guid.Empty) return Error.Validation("Ward is required.");
+        if (string.IsNullOrWhiteSpace(wardName)) return Error.Validation("Ward name is required.");
+        if (string.IsNullOrWhiteSpace(bedNumber)) return Error.Validation("Bed number is required.");
+
+        var fromWardId = WardId;
+        var fromWardName = WardName;
+
+        WardId = wardId;
+        WardName = wardName.Trim();
+        BedNumber = bedNumber.Trim();
+
+        _notes.Add(WardNote.Create(
+            $"Transferred from {fromWardName} to {wardName.Trim()} (bed {bedNumber.Trim()}).",
+            Guid.Empty, transferredAtUtc).Value);
+
+        AddDomainEvent(new PatientTransferredDomainEvent(
+            Id, FacilityId.Value, PatientId, fromWardId, fromWardName, wardId, wardName.Trim(), transferredAtUtc));
+        return Result.Success();
+    }
+
+    /// <summary>
     /// Records a day-to-day SOAP-style ward medical record (vitals + assessment +
     /// plan). Only admitted/under-observation patients can receive new records.
     /// </summary>

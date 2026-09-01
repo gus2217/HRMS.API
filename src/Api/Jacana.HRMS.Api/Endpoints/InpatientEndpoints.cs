@@ -46,6 +46,9 @@ public static class InpatientEndpoints
         group.MapPost("/admissions/{id:guid}/discharge", DischargeAsync)
             .RequireAuthorization(Permissions.Clinical.Consult);
 
+        group.MapPost("/admissions/{id:guid}/transfer", TransferAsync)
+            .RequireAuthorization(Permissions.Clinical.Consult);
+
         group.MapPost("/admissions/{id:guid}/notes", AddWardNoteAsync)
             .RequireAuthorization(Permissions.Clinical.Consult);
 
@@ -128,6 +131,14 @@ public static class InpatientEndpoints
     private static async Task<IResult> DischargeAsync(Guid id, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new DischargePatientCommand(id), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> TransferAsync(
+        Guid id, TransferPatientRequestDto request, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new TransferPatientCommand(
+            id, request.TargetWardId, request.BedNumber), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

@@ -31,6 +31,13 @@ public sealed record DischargePatientCommand(
     Guid AdmissionId)
     : ICommand<Result<AdmissionDetailDto>>;
 
+/// <summary>Transfers an active admission to another ward/bed (capacity-checked).</summary>
+public sealed record TransferPatientCommand(
+    Guid AdmissionId,
+    Guid TargetWardId,
+    string BedNumber)
+    : ICommand<Result<AdmissionDetailDto>>;
+
 public sealed record AddWardNoteCommand(
     Guid AdmissionId,
     string Content)

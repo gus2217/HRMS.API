@@ -1,4 +1,5 @@
 using Jacana.Notifications.Application.DTOs;
+using Jacana.Notifications.Domain;
 using Jacana.SharedKernel.Application;
 using Jacana.SharedKernel.Application.Common;
 using Jacana.SharedKernel.Domain;
@@ -16,3 +17,12 @@ public sealed record MarkNotificationReadCommand(Guid NotificationId)
 
 public sealed record MarkAllNotificationsReadCommand()
     : ICommand<Result<UnreadNotificationCountDto>>;
+
+// ── Preferences ────────────────────────────────────────────────────────────────
+
+public sealed record GetMyNotificationPreferencesQuery()
+    : IQuery<Result<IReadOnlyList<NotificationPreferenceDto>>>;
+
+public sealed record UpdateNotificationPreferenceCommand(
+    NotificationCategory Category, bool InAppEnabled, bool SmsEnabled)
+    : ICommand<Result<NotificationPreferenceDto>>;

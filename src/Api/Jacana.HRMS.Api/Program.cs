@@ -3,6 +3,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using Jacana.HRMS.Api.Auth;
 using Jacana.HRMS.Api.Endpoints;
+using Jacana.HRMS.Api.Hubs;
 using Jacana.HRMS.Api.Middleware;
 using Jacana.Identity.Application;
 using Jacana.Identity.Application.Features.Auth;
@@ -22,6 +23,7 @@ using Jacana.Billing.Infrastructure;
 using Jacana.Inpatient.Application.Features.Inpatient;
 using Jacana.Inpatient.Infrastructure;
 using Jacana.Notifications.Application;
+using Jacana.Notifications.Application.Abstractions;
 using Jacana.Notifications.Infrastructure;
 using Jacana.Audit.Application.Features.Audit;
 using Jacana.Audit.Infrastructure;
@@ -92,6 +94,10 @@ builder.Services.AddSingleton<ICacheService>(_ =>
     new MemoryCacheService(new Microsoft.Extensions.Caching.Memory.MemoryCache(
         new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions())));
 builder.Services.AddSingleton(PerformanceBehaviorOptions.Default);
+
+// ── SignalR real-time notifications ───────────────────────────────────────────
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<INotificationPusher, SignalRNotificationPusher>();
 
 // ── MediatR + pipeline behaviors (order: logging → validation → auth → tx → perf → cache) ──
 builder.Services.AddApplicationPipeline(typeof(LoginCommand).Assembly);
@@ -222,6 +228,9 @@ app.MapInpatientEndpoints();
 app.MapAuditEndpoints();
 app.MapNotificationEndpoints();
 app.MapReportingEndpoints();
+
+// ── SignalR real-time notifications ───────────────────────────────────────────
+app.MapHub<NotificationsHub>("/hubs/notifications");
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))
     .AllowAnonymous();

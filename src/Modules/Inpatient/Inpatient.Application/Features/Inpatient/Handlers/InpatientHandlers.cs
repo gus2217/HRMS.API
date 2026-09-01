@@ -135,6 +135,36 @@ public sealed class AddWardNoteCommandHandler(
     }
 }
 
+public sealed class TransferPatientCommandHandler(
+    IAdmissionRepository admissions,
+    IWardRepository wards,
+    IClock clock)
+    : IRequestHandler<TransferPatientCommand, Result<AdmissionDetailDto>>
+{
+    public async Task<Result<AdmissionDetailDto>> Handle(TransferPatientCommand request, CancellationToken ct)
+    {
+        var admission = await admissions.GetByIdAsync(request.AdmissionId, ct);
+        if (admission is null) return Error.NotFound("Admission not found.");
+
+        var target = await wards.GetByIdAsync(request.TargetWardId, ct);
+        if (target is null) return Error.NotFound("Ward not found.");
+        if (!target.IsActive) return Error.InvalidOperation($"Ward '{target.Name}' is inactive.");
+
+        // Capacity check on the target ward (the admission still occupies its old
+        // ward, so it is not counted in the target's occupancy yet).
+        var occupied = await admissions.GetOccupiedBedCountAsync(target.Id, ct);
+        if (occupied >= target.TotalBeds)
+            return Error.InvalidOperation(
+                $"Ward '{target.Name}' is full ({occupied}/{target.TotalBeds} beds occupied).");
+
+        var result = admission.Transfer(target.Id, target.Name, request.BedNumber, clock.UtcNow);
+        if (result.IsFailure) return result.Error;
+
+        await admissions.UpdateAsync(admission, ct);
+        return AdmissionMapper.ToDetail(admission);
+    }
+}
+
 /// <summary>Records a day-to-day SOAP ward medical record (with vitals).</summary>
 public sealed class AddMedicalRecordCommandHandler(
     IAdmissionRepository admissions,

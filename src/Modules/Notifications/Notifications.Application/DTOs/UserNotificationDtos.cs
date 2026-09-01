@@ -12,3 +12,9 @@ public sealed record UserNotificationDto(
     DateTime CreatedAtUtc);
 
 public sealed record UnreadNotificationCountDto(int UnreadCount);
+
+/// <summary>Per-user, per-category delivery preference (defaults-on).</summary>
+public sealed record NotificationPreferenceDto(
+    string Category,
+    bool InAppEnabled,
+    bool SmsEnabled);
