@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<IQueueEntryRepository, QueueEntryRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IAppointmentRequestRepository, AppointmentRequestRepository>();
+        services.AddScoped<IPatientClinicalRepository, PatientClinicalRepository>();
 
         return services;
     }

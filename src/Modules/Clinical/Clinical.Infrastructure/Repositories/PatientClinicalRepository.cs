@@ -1,0 +1,66 @@
+using Jacana.Clinical.Application.Abstractions;
+using Jacana.Clinical.Application.DTOs;
+using Jacana.Clinical.Domain;
+using Jacana.Clinical.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace Jacana.Clinical.Infrastructure.Repositories;
+
+public sealed class PatientClinicalRepository(ClinicalDbContext db) : IPatientClinicalRepository
+{
+    public Task AddVitalSignAsync(VitalSign vitalSign, CancellationToken ct = default)
+    {
+        db.VitalSigns.Add(vitalSign);
+        return Task.CompletedTask;
+    }
+
+    public Task AddImmunizationAsync(Immunization immunization, CancellationToken ct = default)
+    {
+        db.Immunizations.Add(immunization);
+        return Task.CompletedTask;
+    }
+
+    public Task AddConditionAsync(Condition condition, CancellationToken ct = default)
+    {
+        db.Conditions.Add(condition);
+        return Task.CompletedTask;
+    }
+
+    public Task<Condition?> GetConditionAsync(Guid id, CancellationToken ct = default)
+        => db.Conditions.FirstOrDefaultAsync(c => c.Id == id, ct);
+
+    public Task UpdateConditionAsync(Condition condition, CancellationToken ct = default)
+    {
+        // Aggregate is already tracked from GetConditionAsync.
+        return Task.CompletedTask;
+    }
+
+    public async Task<IReadOnlyList<VitalSignDto>> GetVitalsAsync(Guid patientId, CancellationToken ct = default)
+        => await db.VitalSigns.AsNoTracking()
+            .Where(v => v.PatientId == patientId)
+            .OrderByDescending(v => v.RecordedAtUtc)
+            .Select(v => new VitalSignDto(
+                v.Id, v.PatientId, v.TemperatureCelsius, v.SystolicBp, v.DiastolicBp,
+                v.PulseRate, v.RespiratoryRate, v.OxygenSaturation, v.WeightKg, v.HeightCm,
+                v.Bmi, v.RecordedByUserId, v.RecordedAtUtc))
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<ImmunizationDto>> GetImmunizationsAsync(Guid patientId, CancellationToken ct = default)
+        => await db.Immunizations.AsNoTracking()
+            .Where(i => i.PatientId == patientId)
+            .OrderByDescending(i => i.AdministeredDate)
+            .Select(i => new ImmunizationDto(
+                i.Id, i.PatientId, i.VaccineName, i.DoseNumber, i.AdministeredDate,
+                i.NextDueDate, i.LotNumber, i.Site, i.Notes, i.RecordedByUserId, i.RecordedAtUtc))
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<ConditionDto>> GetConditionsAsync(Guid patientId, CancellationToken ct = default)
+        => await db.Conditions.AsNoTracking()
+            .Where(c => c.PatientId == patientId)
+            .OrderByDescending(c => c.Status == ConditionStatus.Active)
+            .ThenByDescending(c => c.OnsetDate)
+            .Select(c => new ConditionDto(
+                c.Id, c.PatientId, c.Code, c.Description, c.Status.ToString(),
+                c.OnsetDate, c.ResolvedDate, c.RecordedByUserId, c.RecordedAtUtc))
+            .ToListAsync(ct);
+}
