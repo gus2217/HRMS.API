@@ -6,6 +6,7 @@ using Jacana.Identity.Application;
 using Jacana.SharedKernel.Application.Abstractions;
 using Jacana.SharedKernel.Domain;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Jacana.HRMS.Api.Endpoints;
 
@@ -97,7 +98,7 @@ public static class FlagsAttachmentsOrdersEndpoints
     }
 
     private static async Task<IResult> UploadAttachmentAsync(
-        Guid patientId, IFormFile file, string category, ISender sender, CancellationToken ct)
+        Guid patientId, [FromForm] IFormFile file, [FromForm] string? category, ISender sender, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
             return Results.BadRequest(new { error = "A file is required." });
@@ -112,7 +113,7 @@ public static class FlagsAttachmentsOrdersEndpoints
         }
 
         var result = await sender.Send(new UploadAttachmentCommand(
-            patientId, file.FileName, file.ContentType, category ?? string.Empty, content), ct);
+            patientId, file.FileName, file.ContentType, category ?? "General", content), ct);
         return result.IsSuccess ? Results.Created($"/api/v1/patients/{patientId}/attachments/{result.Value.Id}", result.Value) : MapError(result.Error);
     }
 

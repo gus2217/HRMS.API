@@ -34,16 +34,16 @@ pg_ready() {
   fi
 }
 
-# ── 1. Infrastructure (Redis via Docker; Postgres is EXTERNAL) ──────────
+# ── 1. Infrastructure (Redis + MinIO via Docker; Postgres is EXTERNAL) ─────
 say "Checking database ($DB_HOST:$DB_PORT/$DB_NAME)"
 if pg_ready; then
   ok "Postgres reachable at $DB_HOST:$DB_PORT — external server"
 else
   if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-    say "Starting Redis via Docker"
-    docker compose up -d redis
+    say "Starting Redis + MinIO via Docker"
+    docker compose up -d redis minio
   else
-    echo "    Docker not available — skipping Redis container (assume Redis is already running)"
+    echo "    Docker not available — skipping Redis/MinIO containers (assume they are already running)"
   fi
   say "Waiting for external Postgres at $DB_HOST:$DB_PORT…"
   for i in $(seq 1 20); do
@@ -52,6 +52,15 @@ else
     Point DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASS at your external server, then re-run."
     sleep 2
   done
+fi
+
+# MinIO must be reachable when Storage:Provider=Minio (default in appsettings).
+say "Checking MinIO at localhost:9000"
+if curl -s -o /dev/null --max-time 2 http://localhost:9000/minio/health/live; then
+  ok "MinIO healthy on :9000"
+else
+  echo "    MinIO not reachable on :9000 — uploads will fail until it is up."
+  echo "    Start it with:  docker compose up -d minio   (console: http://localhost:9001, minioadmin/minioadmin)"
 fi
 
 # ── 2. Seed (idempotent — safe to run every time) ───────────────────────

@@ -1,7 +1,8 @@
 version: "3.9"
 
 # Jacana HRMS — local development infrastructure.
-# Redis (distributed cache) + OTLP collector (traces).
+# Redis (distributed cache) + MinIO (media/attachments object storage) +
+# OTLP collector (traces).
 # Postgres is NOT included: the project uses an external Postgres server
 # (set DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASS — see dev.sh).
 # Hangfire runs in-process in the API (AddHangfireServer) and uses Postgres for
@@ -22,6 +23,28 @@ services:
       timeout: 3s
       retries: 10
 
+  # MinIO — S3-compatible object storage for patient attachments, ward-record
+  # media and any other uploaded files. Console: http://localhost:9001
+  # (minioadmin / minioadmin). Credentials can be overridden via MINIO_ROOT_USER
+  # and MINIO_ROOT_PASSWORD in your environment / .env file.
+  minio:
+    image: minio/minio:latest
+    container_name: jacana-minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - jacana_miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   # OpenTelemetry collector (traces) — optional; remove if not tracing locally.
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
@@ -35,3 +58,4 @@ services:
 
 volumes:
   jacana_redisdata:
+  jacana_miniodata:

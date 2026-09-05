@@ -31,6 +31,15 @@ public sealed class CsrfProtectionMiddleware(RequestDelegate next)
             return;
         }
 
+        // SignalR negotiate/transports: the SPA authenticates the hub with the
+        // JWT via ?access_token= (browsers cannot set headers on WebSockets), and
+        // SignalR has its own CSRF protections (the token itself is the defence).
+        if (context.Request.Path.StartsWithSegments("/hubs"))
+        {
+            await next(context);
+            return;
+        }
+
         if (context.User.Identity?.IsAuthenticated == true)
         {
             var supplied = context.Request.Headers[CsrfHeader].ToString();

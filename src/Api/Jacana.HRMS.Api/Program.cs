@@ -38,6 +38,7 @@ using Jacana.SharedKernel.Infrastructure.Identity;
 using Jacana.SharedKernel.Infrastructure.Outbox;
 using Jacana.SharedKernel.Infrastructure.Services;
 using Jacana.SharedKernel.Infrastructure.Time;
+using Jacana.HRMS.Api.Storage;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi.Models;
@@ -75,9 +76,7 @@ builder.Services.AddOpenTelemetry()
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, CurrentUserService>();
-builder.Services.AddSingleton<IFileStorage>(_ =>
-    new LocalFileStorage(builder.Configuration["Storage:AttachmentsPath"]
-        ?? Path.Combine(builder.Environment.ContentRootPath, "attachments")));
+builder.Services.AddSingleton<IFileStorage>(_ => CreateFileStorage(builder.Configuration, builder.Environment));
 builder.Services.AddSingleton<IPatientIdentityLookup>(_ =>
     new PatientIdentityLookup(connectionString));
 builder.Services.AddSingleton<IUserIdentityLookup>(_ =>
@@ -236,3 +235,26 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))
     .AllowAnonymous();
 
 app.Run();
+
+/// <summary>
+/// Storage backend selection — MinIO object storage when configured
+/// (Storage:Provider=Minio), otherwise the local-disk fallback.
+/// </summary>
+static IFileStorage CreateFileStorage(IConfiguration configuration, IWebHostEnvironment environment)
+{
+    var provider = configuration["Storage:Provider"] ?? "Local";
+    if (string.Equals(provider, "Minio", StringComparison.OrdinalIgnoreCase))
+    {
+        var endpoint = configuration["Storage:Minio:Endpoint"]
+            ?? throw new InvalidOperationException("Storage:Minio:Endpoint is required when Storage:Provider=Minio.");
+        return new MinioFileStorage(
+            endpoint,
+            configuration["Storage:Minio:AccessKey"] ?? string.Empty,
+            configuration["Storage:Minio:SecretKey"] ?? string.Empty,
+            configuration["Storage:Minio:Bucket"] ?? "jacana-media",
+            bool.TryParse(configuration["Storage:Minio:UseSsl"], out var useSsl) && useSsl);
+    }
+
+    return new LocalFileStorage(configuration["Storage:AttachmentsPath"]
+        ?? Path.Combine(environment.ContentRootPath, "attachments"));
+}

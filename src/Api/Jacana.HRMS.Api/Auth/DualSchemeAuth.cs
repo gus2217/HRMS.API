@@ -47,16 +47,39 @@ public static class DualSchemeAuth
             options.DefaultAuthenticateScheme = PolicyScheme;
             options.DefaultChallengeScheme = PolicyScheme;
         })
-        .AddPolicyScheme(PolicyScheme, "JWT via Bearer header or HttpOnly cookie", options =>
+        .AddPolicyScheme(PolicyScheme, "JWT via Bearer header, query string (SignalR) or HttpOnly cookie", options =>
         {
             options.ForwardDefaultSelector = context =>
-                context.Request.Headers.Authorization.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            {
+                // SignalR WebSockets cannot set an Authorization header — the SPA
+                // sends the JWT as ?access_token= on the hub path instead.
+                if (context.Request.Path.StartsWithSegments("/hubs")
+                    && !string.IsNullOrEmpty(context.Request.Query["access_token"]))
+                    return BearerScheme;
+
+                return context.Request.Headers.Authorization.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
                     ? BearerScheme
                     : CookieScheme;
+            };
         })
         .AddJwtBearer(BearerScheme, options =>
         {
             options.TokenValidationParameters = tokenValidationParameters;
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    // SignalR (WebSockets/SSE) transports send the token in the
+                    // query string because the browser cannot set headers there.
+                    if (context.Request.Path.StartsWithSegments("/hubs"))
+                    {
+                        var queryToken = context.Request.Query["access_token"].ToString();
+                        if (!string.IsNullOrEmpty(queryToken))
+                            context.Token = queryToken;
+                    }
+                    return Task.CompletedTask;
+                }
+            };
         })
         .AddJwtBearer(CookieScheme, options =>
         {
