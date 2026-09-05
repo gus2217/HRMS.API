@@ -42,7 +42,7 @@ public sealed class PatientClinicalRepository(ClinicalDbContext db) : IPatientCl
             .Select(v => new VitalSignDto(
                 v.Id, v.PatientId, v.TemperatureCelsius, v.SystolicBp, v.DiastolicBp,
                 v.PulseRate, v.RespiratoryRate, v.OxygenSaturation, v.WeightKg, v.HeightCm,
-                v.Bmi, v.RecordedByUserId, v.RecordedAtUtc))
+                v.Bmi, v.RecordedByUserId, v.RecordedAtUtc, null))
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<ImmunizationDto>> GetImmunizationsAsync(Guid patientId, CancellationToken ct = default)
@@ -51,7 +51,7 @@ public sealed class PatientClinicalRepository(ClinicalDbContext db) : IPatientCl
             .OrderByDescending(i => i.AdministeredDate)
             .Select(i => new ImmunizationDto(
                 i.Id, i.PatientId, i.VaccineName, i.DoseNumber, i.AdministeredDate,
-                i.NextDueDate, i.LotNumber, i.Site, i.Notes, i.RecordedByUserId, i.RecordedAtUtc))
+                i.NextDueDate, i.LotNumber, i.Site, i.Notes, i.RecordedByUserId, i.RecordedAtUtc, null))
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<ConditionDto>> GetConditionsAsync(Guid patientId, CancellationToken ct = default)
@@ -61,7 +61,7 @@ public sealed class PatientClinicalRepository(ClinicalDbContext db) : IPatientCl
             .ThenByDescending(c => c.OnsetDate)
             .Select(c => new ConditionDto(
                 c.Id, c.PatientId, c.Code, c.Description, c.Status.ToString(),
-                c.OnsetDate, c.ResolvedDate, c.RecordedByUserId, c.RecordedAtUtc))
+                c.OnsetDate, c.ResolvedDate, c.RecordedByUserId, c.RecordedAtUtc, null))
             .ToListAsync(ct);
 
     // ── Flags ────────────────────────────────────────────────────────────────

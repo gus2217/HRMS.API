@@ -95,23 +95,50 @@ public sealed class ResolveConditionCommandHandler(IPatientClinicalRepository re
     }
 }
 
-public sealed class GetVitalsQueryHandler(IPatientClinicalRepository repository)
+public sealed class GetVitalsQueryHandler(IPatientClinicalRepository repository, IUserIdentityLookup users)
     : IRequestHandler<GetVitalsQuery, Result<IReadOnlyList<VitalSignDto>>>
 {
     public async Task<Result<IReadOnlyList<VitalSignDto>>> Handle(GetVitalsQuery request, CancellationToken ct)
-        => Result.Success(await repository.GetVitalsAsync(request.PatientId, ct));
+    {
+        var items = await repository.GetVitalsAsync(request.PatientId, ct);
+        var ids = items.Select(i => i.RecordedByUserId).Where(id => id != Guid.Empty).Distinct().ToArray();
+        if (ids.Length == 0) return Result.Success(items);
+
+        var map = await users.GetIdentitiesAsync(ids, ct);
+        return Result.Success<IReadOnlyList<VitalSignDto>>(items
+            .Select(i => i with { RecordedByName = map.TryGetValue(i.RecordedByUserId, out var u) ? u.FullName : null })
+            .ToArray());
+    }
 }
 
-public sealed class GetImmunizationsQueryHandler(IPatientClinicalRepository repository)
+public sealed class GetImmunizationsQueryHandler(IPatientClinicalRepository repository, IUserIdentityLookup users)
     : IRequestHandler<GetImmunizationsQuery, Result<IReadOnlyList<ImmunizationDto>>>
 {
     public async Task<Result<IReadOnlyList<ImmunizationDto>>> Handle(GetImmunizationsQuery request, CancellationToken ct)
-        => Result.Success(await repository.GetImmunizationsAsync(request.PatientId, ct));
+    {
+        var items = await repository.GetImmunizationsAsync(request.PatientId, ct);
+        var ids = items.Select(i => i.RecordedByUserId).Where(id => id != Guid.Empty).Distinct().ToArray();
+        if (ids.Length == 0) return Result.Success(items);
+
+        var map = await users.GetIdentitiesAsync(ids, ct);
+        return Result.Success<IReadOnlyList<ImmunizationDto>>(items
+            .Select(i => i with { RecordedByName = map.TryGetValue(i.RecordedByUserId, out var u) ? u.FullName : null })
+            .ToArray());
+    }
 }
 
-public sealed class GetConditionsQueryHandler(IPatientClinicalRepository repository)
+public sealed class GetConditionsQueryHandler(IPatientClinicalRepository repository, IUserIdentityLookup users)
     : IRequestHandler<GetConditionsQuery, Result<IReadOnlyList<ConditionDto>>>
 {
     public async Task<Result<IReadOnlyList<ConditionDto>>> Handle(GetConditionsQuery request, CancellationToken ct)
-        => Result.Success(await repository.GetConditionsAsync(request.PatientId, ct));
+    {
+        var items = await repository.GetConditionsAsync(request.PatientId, ct);
+        var ids = items.Select(i => i.RecordedByUserId).Where(id => id != Guid.Empty).Distinct().ToArray();
+        if (ids.Length == 0) return Result.Success(items);
+
+        var map = await users.GetIdentitiesAsync(ids, ct);
+        return Result.Success<IReadOnlyList<ConditionDto>>(items
+            .Select(i => i with { RecordedByName = map.TryGetValue(i.RecordedByUserId, out var u) ? u.FullName : null })
+            .ToArray());
+    }
 }

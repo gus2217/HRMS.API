@@ -14,7 +14,8 @@ public sealed record VitalSignDto(
     decimal? HeightCm,
     decimal? Bmi,
     Guid RecordedByUserId,
-    DateTime RecordedAtUtc);
+    DateTime RecordedAtUtc,
+    string? RecordedByName = null);
 
 /// <summary>One vaccination record.</summary>
 public sealed record ImmunizationDto(
@@ -28,7 +29,8 @@ public sealed record ImmunizationDto(
     string? Site,
     string? Notes,
     Guid RecordedByUserId,
-    DateTime RecordedAtUtc);
+    DateTime RecordedAtUtc,
+    string? RecordedByName = null);
 
 /// <summary>One persistent problem-list condition.</summary>
 public sealed record ConditionDto(
@@ -40,4 +42,5 @@ public sealed record ConditionDto(
     DateTime OnsetDate,
     DateTime? ResolvedDate,
     Guid RecordedByUserId,
-    DateTime RecordedAtUtc);
+    DateTime RecordedAtUtc,
+    string? RecordedByName = null);

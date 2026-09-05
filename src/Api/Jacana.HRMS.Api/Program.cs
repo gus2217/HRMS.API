@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Jacana.HRMS.Api;
 using Jacana.HRMS.Api.Auth;
 using Jacana.HRMS.Api.Endpoints;
 using Jacana.HRMS.Api.Hubs;
@@ -52,7 +53,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Minimal APIs must bind enum values from their JSON string names (e.g. "Female",
 // "Single") — the frontend sends strings, not integers.
 builder.Services.ConfigureHttpJsonOptions(options =>
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    options.SerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+});
 
 // ── Serilog structured logging ────────────────────────────────────────────────
 builder.Host.UseSerilog((context, services, config) => config

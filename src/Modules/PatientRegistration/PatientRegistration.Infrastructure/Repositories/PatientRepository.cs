@@ -72,13 +72,24 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
     /// so exact matching resolves IDs in memory — guarded to digit-only terms that
     /// are not already a valid phone.
     /// </summary>
+    /// <summary>
+    /// Matches a free-text term against name, patient number, phone (any Kenyan
+    /// format, including partial prefixes) and national ID (exact or prefix).
+    /// National ID is encrypted at rest, so ID matching resolves candidates in
+    /// memory — guarded to digit-only terms that are not a full phone number.
+    /// </summary>
     private async Task<IQueryable<Patient>> BuildSearchQueryAsync(
         IQueryable<Patient> query, string term, CancellationToken ct)
     {
         var lower = term.ToLowerInvariant();
+        var digits = new string(term.Where(char.IsDigit).ToArray());
+
+        // Full valid Kenyan phone → exact E.164 equality.
         var phone = PhoneNumber.TryNormalize(term);
 
-        var nationalIds = await ResolveNationalIdMatchesAsync(term, phone, ct);
+        // Partial phone/ID prefixes: "071122", "+254711", "71122", "1234567" …
+        var phonePrefix = BuildPhonePrefix(digits);
+        var nationalIds = await ResolveNationalIdMatchesAsync(term, digits, phone, ct);
 
         return query.Where(p =>
             p.FirstName.ToLower().Contains(lower)
@@ -86,14 +97,43 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
             || (p.FirstName + " " + p.LastName).ToLower().Contains(lower)
             || p.PatientNumber.ToLower().Contains(lower)
             || (phone != null && p.Phone.Value == phone)
+            || (phonePrefix != null && p.Phone.Value.StartsWith(phonePrefix))
             || nationalIds.Contains(p.Id));
     }
 
-    private async Task<IReadOnlyList<Guid>> ResolveNationalIdMatchesAsync(
-        string term, string? phone, CancellationToken ct)
+    /// <summary>
+    /// Builds an E.164 prefix for a digit sequence so partial phone searches match:
+    /// "071122" → "+25471122", "254711223" → "+254711223", "7112233" → "+2547112233".
+    /// Null when the digits cannot be a Kenyan mobile prefix.
+    /// </summary>
+    private static string? BuildPhonePrefix(string digits)
     {
+        if (string.IsNullOrEmpty(digits)) return null;
+
+        // Normalise to the national (9-digit) form: strip "254" or leading "0".
+        var national = digits;
+        if (national.StartsWith("254", StringComparison.Ordinal) && national.Length > 9)
+            national = national[3..];
+        else if (national.StartsWith("0", StringComparison.Ordinal) && national.Length > 1)
+            national = national[1..];
+
+        // Kenyan mobiles start with 7 or 1; accept 3+ typed digits as a prefix.
+        if (national.Length >= 3 && national.Length <= 9 && national[0] is '7' or '1')
+            return "+254" + national;
+
+        return null;
+    }
+
+    private async Task<IReadOnlyList<Guid>> ResolveNationalIdMatchesAsync(
+        string term, string digits, string? phone, CancellationToken ct)
+    {
+        // A full phone match is a phone, not an ID.
         if (phone is not null) return [];
-        if (!term.All(char.IsDigit) || term.Length < 6 || term.Length > 12) return [];
+
+        // IDs are 6-9 digits; ignore anything that is clearly a phone prefix
+        // (leading 0/254) and noise shorter than 4 digits.
+        if (digits.Length is < 4 or > 9) return [];
+        if (digits.StartsWith('0') || digits.StartsWith("254", StringComparison.Ordinal)) return [];
 
         var rows = await db.Patients.AsNoTracking()
             .Where(p => p.NationalId != null)
@@ -101,7 +141,7 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
             .ToListAsync(ct);
 
         return rows
-            .Where(r => r.NationalId!.Value == term)
+            .Where(r => r.NationalId!.Value.StartsWith(digits, StringComparison.Ordinal))
             .Select(r => r.Id)
             .ToList();
     }
@@ -123,8 +163,10 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
             p.Address.County, p.Address.SubCounty, p.Address.Ward, p.Address.Line1,
             p.Status.ToString(),
             p.Allergies.Select(a => new AllergyDto(a.Id, a.Substance, a.Severity.ToString(), a.Notes)).ToArray(),
-            p.Consents.Select(c => new ConsentDto(c.Type.ToString(), c.Granted, c.RecordedAtUtc)).ToArray(),
-            p.NextOfKin.Select(k => new NextOfKinDto(k.FullName, k.Relationship, k.Phone.Value)).ToArray());
+            p.Consents.Select(c => new ConsentDto(c.Type.ToString(), c.Granted, c.RecordedByUserId, null, c.RecordedAtUtc)).ToArray(),
+            p.NextOfKin.Select(k => new NextOfKinDto(k.FullName, k.Relationship, k.Phone.Value)).ToArray(),
+            p.NationalId?.Value, p.CreatedByUserId, null, p.CreatedAtUtc,
+            p.ModifiedByUserId, null, p.ModifiedAtUtc);
     }
 
     public async Task<IReadOnlyList<Patient>> FindByPhoneOrNationalIdAsync(

@@ -29,10 +29,22 @@ public sealed record PatientDetailDto(
     string Status,
     IReadOnlyList<AllergyDto> Allergies,
     IReadOnlyList<ConsentDto> Consents,
-    IReadOnlyList<NextOfKinDto> NextOfKin);
+    IReadOnlyList<NextOfKinDto> NextOfKin,
+    string? NationalId = null,
+    Guid CreatedByUserId = default,
+    string? CreatedByName = null,
+    DateTime CreatedAtUtc = default,
+    Guid? ModifiedByUserId = null,
+    string? ModifiedByName = null,
+    DateTime? ModifiedAtUtc = null);
 
 public sealed record AllergyDto(Guid Id, string Substance, string Severity, string? Notes);
-public sealed record ConsentDto(string Type, bool Granted, DateTime RecordedAtUtc);
+public sealed record ConsentDto(
+    string Type,
+    bool Granted,
+    Guid RecordedByUserId,
+    string? RecordedByName,
+    DateTime RecordedAtUtc);
 public sealed record NextOfKinDto(string FullName, string Relationship, string? Phone);
 
 public sealed record RegisterPatientResponseDto(

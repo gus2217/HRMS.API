@@ -18,7 +18,10 @@ internal static class PatientConfidentialPermission
     public const string Code = "Patient.ConfidentialView";
 }
 
-public sealed class GetPatientQueryHandler(IPatientRepository patients, ICurrentUser currentUser)
+public sealed class GetPatientQueryHandler(
+    IPatientRepository patients,
+    ICurrentUser currentUser,
+    IUserIdentityLookup users)
     : IRequestHandler<GetPatientQuery, Result<PatientDetailDto>>
 {
     public async Task<Result<PatientDetailDto>> Handle(GetPatientQuery request, CancellationToken ct)
@@ -26,9 +29,35 @@ public sealed class GetPatientQueryHandler(IPatientRepository patients, ICurrent
         var detail = await patients.GetDetailAsync(request.PatientId, ct);
         if (detail is null) return Error.NotFound("Patient not found.");
 
+        var enriched = await EnrichNamesAsync(detail, ct);
         return currentUser.Permissions.Contains(PatientConfidentialPermission.Code)
-            ? detail
-            : Masked.Mask(detail);
+            ? enriched
+            : Masked.Mask(enriched);
+    }
+
+    /// <summary>
+    /// Resolves display names for the staff who created/updated the record and
+    /// recorded each consent — so the record shows who did what, when.
+    /// </summary>
+    private async Task<PatientDetailDto> EnrichNamesAsync(PatientDetailDto d, CancellationToken ct)
+    {
+        var ids = new List<Guid>();
+        if (d.CreatedByUserId != Guid.Empty) ids.Add(d.CreatedByUserId);
+        if (d.ModifiedByUserId is { } m && m != Guid.Empty) ids.Add(m);
+        ids.AddRange(d.Consents.Select(c => c.RecordedByUserId).Where(id => id != Guid.Empty));
+        if (ids.Count == 0) return d;
+
+        var names = await users.GetIdentitiesAsync(ids.Distinct().ToArray(), ct);
+        string? NameOf(Guid id) => names.TryGetValue(id, out var u) ? u.FullName : null;
+
+        return d with
+        {
+            CreatedByName = NameOf(d.CreatedByUserId),
+            ModifiedByName = d.ModifiedByUserId is { } mu ? NameOf(mu) : null,
+            Consents = d.Consents
+                .Select(c => c with { RecordedByName = NameOf(c.RecordedByUserId) })
+                .ToArray(),
+        };
     }
 }
 
@@ -61,6 +90,7 @@ internal static class Masked
         => d with
         {
             Phone = null,
+            NationalId = null,
             InsuranceNumber = null,
             County = string.Empty,
             SubCounty = null,

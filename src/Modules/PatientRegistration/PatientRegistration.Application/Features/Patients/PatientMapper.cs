@@ -18,6 +18,8 @@ internal static class PatientMapper
             p.Address.County, p.Address.SubCounty, p.Address.Ward, p.Address.Line1,
             p.Status.ToString(),
             p.Allergies.Select(a => new AllergyDto(a.Id, a.Substance, a.Severity.ToString(), a.Notes)).ToArray(),
-            p.Consents.Select(c => new ConsentDto(c.Type.ToString(), c.Granted, c.RecordedAtUtc)).ToArray(),
-            p.NextOfKin.Select(k => new NextOfKinDto(k.FullName, k.Relationship, k.Phone.Value)).ToArray());
+            p.Consents.Select(c => new ConsentDto(c.Type.ToString(), c.Granted, c.RecordedByUserId, null, c.RecordedAtUtc)).ToArray(),
+            p.NextOfKin.Select(k => new NextOfKinDto(k.FullName, k.Relationship, k.Phone.Value)).ToArray(),
+            p.NationalId?.Value, p.CreatedByUserId, null, p.CreatedAtUtc,
+            p.ModifiedByUserId, null, p.ModifiedAtUtc);
 }
