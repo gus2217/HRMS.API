@@ -150,5 +150,7 @@ public sealed class PatientClinicalRepository(ClinicalDbContext db) : IPatientCl
     private static DiagnosticOrderDto MapOrder(DiagnosticOrder o) => new(
         o.Id, o.PatientId, o.ConsultationId, o.Type.ToString(), o.Name, o.BodySite,
         o.ClinicalIndication, o.Priority.ToString(), o.Status.ToString(),
-        o.OrderedByUserId, o.OrderedAtUtc, o.Report, o.ReportedByUserId, o.ReportedAtUtc);
+        o.OrderedByUserId, o.OrderedAtUtc, o.ScheduledByUserId, o.ScheduledAtUtc,
+        o.PerformedByUserId, o.PerformedAtUtc, o.Report, o.ReportedByUserId, o.ReportedAtUtc,
+        o.CancelledByUserId, o.CancelledAtUtc, o.CancellationReason);
 }

@@ -68,9 +68,16 @@ public sealed class DiagnosticOrderConfiguration : IEntityTypeConfiguration<Diag
         builder.Property(o => o.Status).HasConversion<string>().HasMaxLength(16);
         builder.Property(o => o.OrderedByUserId).IsRequired();
         builder.Property(o => o.OrderedAtUtc).IsRequired();
+        builder.Property(o => o.ScheduledByUserId);
+        builder.Property(o => o.ScheduledAtUtc);
+        builder.Property(o => o.PerformedByUserId);
+        builder.Property(o => o.PerformedAtUtc);
         builder.Property(o => o.Report).HasMaxLength(8000);
         builder.Property(o => o.ReportedByUserId);
         builder.Property(o => o.ReportedAtUtc);
+        builder.Property(o => o.CancelledByUserId);
+        builder.Property(o => o.CancelledAtUtc);
+        builder.Property(o => o.CancellationReason).HasMaxLength(500);
 
         builder.ComplexProperty(o => o.FacilityId, c => c.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.Property(o => o.RowVersion).IsConcurrencyToken();

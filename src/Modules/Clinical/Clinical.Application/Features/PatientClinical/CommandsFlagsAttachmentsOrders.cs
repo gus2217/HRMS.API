@@ -37,6 +37,10 @@ public sealed record CreateDiagnosticOrderCommand(
     DiagnosticOrderPriority Priority)
     : ICommand<Result<DiagnosticOrderDto>>;
 
+public sealed record ScheduleDiagnosticOrderCommand(
+    Guid OrderId)
+    : ICommand<Result<DiagnosticOrderDto>>;
+
 public sealed record PerformDiagnosticOrderCommand(
     Guid OrderId)
     : ICommand<Result<DiagnosticOrderDto>>;
@@ -47,5 +51,6 @@ public sealed record ReportDiagnosticOrderCommand(
     : ICommand<Result<DiagnosticOrderDto>>;
 
 public sealed record CancelDiagnosticOrderCommand(
-    Guid OrderId)
+    Guid OrderId,
+    string Reason)
     : ICommand<Result<DiagnosticOrderDto>>;

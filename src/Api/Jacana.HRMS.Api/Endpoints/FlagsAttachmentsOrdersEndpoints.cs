@@ -47,6 +47,8 @@ public static class FlagsAttachmentsOrdersEndpoints
         // ── Diagnostic orders ─────────────────────────────────────────────────
         orders.MapPost("/", CreateOrderAsync)
             .RequireAuthorization(Permissions.Clinical.Consult);
+        orders.MapPost("/{orderId:guid}/schedule", ScheduleOrderAsync)
+            .RequireAuthorization(Permissions.Clinical.Consult);
         orders.MapPost("/{orderId:guid}/perform", PerformOrderAsync)
             .RequireAuthorization(Permissions.Clinical.Consult);
         orders.MapPost("/{orderId:guid}/report", ReportOrderAsync)
@@ -150,6 +152,12 @@ public static class FlagsAttachmentsOrdersEndpoints
         return result.IsSuccess ? Results.Created($"/api/v1/diagnostic-orders/{result.Value.Id}", result.Value) : MapError(result.Error);
     }
 
+    private static async Task<IResult> ScheduleOrderAsync(Guid orderId, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new ScheduleDiagnosticOrderCommand(orderId), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
+    }
+
     private static async Task<IResult> PerformOrderAsync(Guid orderId, ISender sender, CancellationToken ct)
     {
         var result = await sender.Send(new PerformDiagnosticOrderCommand(orderId), ct);
@@ -163,9 +171,10 @@ public static class FlagsAttachmentsOrdersEndpoints
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 
-    private static async Task<IResult> CancelOrderAsync(Guid orderId, ISender sender, CancellationToken ct)
+    private static async Task<IResult> CancelOrderAsync(
+        Guid orderId, CancelDiagnosticOrderRequestDto request, ISender sender, CancellationToken ct)
     {
-        var result = await sender.Send(new CancelDiagnosticOrderCommand(orderId), ct);
+        var result = await sender.Send(new CancelDiagnosticOrderCommand(orderId, request.Reason), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

@@ -6,6 +6,7 @@ public enum NotificationCategory
     ConsultationRequested,
     AppointmentRequested,
     LabResultReady,
+    DiagnosticResultReady,
     PrescriptionInitiated,
     PatientAdmitted,
     PatientDischarged,

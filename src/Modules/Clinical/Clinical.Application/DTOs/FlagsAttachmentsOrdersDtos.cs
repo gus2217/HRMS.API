@@ -36,6 +36,13 @@ public sealed record DiagnosticOrderDto(
     string Status,
     Guid OrderedByUserId,
     DateTime OrderedAtUtc,
+    Guid? ScheduledByUserId,
+    DateTime? ScheduledAtUtc,
+    Guid? PerformedByUserId,
+    DateTime? PerformedAtUtc,
     string? Report,
     Guid? ReportedByUserId,
-    DateTime? ReportedAtUtc);
+    DateTime? ReportedAtUtc,
+    Guid? CancelledByUserId,
+    DateTime? CancelledAtUtc,
+    string? CancellationReason);

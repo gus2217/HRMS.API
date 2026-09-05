@@ -71,7 +71,7 @@ public class FlagsAttachmentsOrdersTests
 
         Assert.Equal(DiagnosticOrderStatus.Ordered, o.Status);
 
-        Assert.True(o.MarkPerformed(DateTime.UtcNow).IsSuccess);
+        Assert.True(o.MarkPerformed(User, DateTime.UtcNow).IsSuccess);
         Assert.Equal(DiagnosticOrderStatus.Performed, o.Status);
 
         Assert.True(o.RecordReport("No consolidation", User, DateTime.UtcNow).IsSuccess);
@@ -93,9 +93,9 @@ public class FlagsAttachmentsOrdersTests
     {
         var o = DiagnosticOrder.Create(Facility, Patient, null, DiagnosticOrderType.Procedure,
             "Minor surgery", null, "Abscess", DiagnosticOrderPriority.Routine, User, DateTime.UtcNow).Value;
-        o.MarkPerformed(DateTime.UtcNow);
+        o.MarkPerformed(User, DateTime.UtcNow);
         o.RecordReport("Done", User, DateTime.UtcNow);
 
-        Assert.True(o.Cancel().IsFailure);
+        Assert.True(o.Cancel("Performed already", User, DateTime.UtcNow).IsFailure);
     }
 }

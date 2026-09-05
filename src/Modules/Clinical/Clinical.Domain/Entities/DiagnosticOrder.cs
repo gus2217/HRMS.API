@@ -51,9 +51,16 @@ public sealed class DiagnosticOrder : AggregateRoot<Guid>
     public DiagnosticOrderStatus Status { get; private set; }
     public Guid OrderedByUserId { get; private set; }
     public DateTime OrderedAtUtc { get; private set; }
+    public Guid? ScheduledByUserId { get; private set; }
+    public DateTime? ScheduledAtUtc { get; private set; }
+    public Guid? PerformedByUserId { get; private set; }
+    public DateTime? PerformedAtUtc { get; private set; }
     public string? Report { get; private set; }
     public Guid? ReportedByUserId { get; private set; }
     public DateTime? ReportedAtUtc { get; private set; }
+    public Guid? CancelledByUserId { get; private set; }
+    public DateTime? CancelledAtUtc { get; private set; }
+    public string? CancellationReason { get; private set; }
 
     public static Result<DiagnosticOrder> Create(
         FacilityId facilityId,
@@ -77,10 +84,24 @@ public sealed class DiagnosticOrder : AggregateRoot<Guid>
             bodySite?.Trim(), clinicalIndication.Trim(), priority, orderedByUserId, orderedAtUtc);
     }
 
-    public Result MarkPerformed(DateTime performedAtUtc)
+    public Result Schedule(Guid scheduledByUserId, DateTime scheduledAtUtc)
+    {
+        if (Status != DiagnosticOrderStatus.Ordered)
+            return Error.InvalidOperation($"Cannot schedule an order in status {Status}.");
+
+        ScheduledByUserId = scheduledByUserId;
+        ScheduledAtUtc = scheduledAtUtc;
+        Status = DiagnosticOrderStatus.Scheduled;
+        return Result.Success();
+    }
+
+    public Result MarkPerformed(Guid performedByUserId, DateTime performedAtUtc)
     {
         if (Status is not (DiagnosticOrderStatus.Ordered or DiagnosticOrderStatus.Scheduled))
             return Error.InvalidOperation($"Cannot perform an order in status {Status}.");
+
+        PerformedByUserId = performedByUserId;
+        PerformedAtUtc = performedAtUtc;
         Status = DiagnosticOrderStatus.Performed;
         return Result.Success();
     }
@@ -95,13 +116,22 @@ public sealed class DiagnosticOrder : AggregateRoot<Guid>
         ReportedByUserId = reportedByUserId;
         ReportedAtUtc = reportedAtUtc;
         Status = DiagnosticOrderStatus.Reported;
+
+        AddDomainEvent(new DiagnosticOrderReportedDomainEvent(
+            Id, FacilityId.Value, PatientId, ConsultationId, OrderedByUserId, reportedAtUtc));
         return Result.Success();
     }
 
-    public Result Cancel()
+    public Result Cancel(string reason, Guid cancelledByUserId, DateTime cancelledAtUtc)
     {
         if (Status is DiagnosticOrderStatus.Reported or DiagnosticOrderStatus.Cancelled)
             return Error.InvalidOperation($"Cannot cancel an order in status {Status}.");
+        if (string.IsNullOrWhiteSpace(reason))
+            return Error.Validation("A cancellation reason is required.");
+
+        CancellationReason = reason.Trim();
+        CancelledByUserId = cancelledByUserId;
+        CancelledAtUtc = cancelledAtUtc;
         Status = DiagnosticOrderStatus.Cancelled;
         return Result.Success();
     }

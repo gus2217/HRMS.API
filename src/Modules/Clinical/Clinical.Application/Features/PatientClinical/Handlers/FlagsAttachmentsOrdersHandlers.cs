@@ -126,10 +126,34 @@ public sealed class CreateDiagnosticOrderCommandHandler(
     internal static DiagnosticOrderDto MapOrder(DiagnosticOrder o) => new(
         o.Id, o.PatientId, o.ConsultationId, o.Type.ToString(), o.Name, o.BodySite,
         o.ClinicalIndication, o.Priority.ToString(), o.Status.ToString(),
-        o.OrderedByUserId, o.OrderedAtUtc, o.Report, o.ReportedByUserId, o.ReportedAtUtc);
+        o.OrderedByUserId, o.OrderedAtUtc, o.ScheduledByUserId, o.ScheduledAtUtc,
+        o.PerformedByUserId, o.PerformedAtUtc, o.Report, o.ReportedByUserId, o.ReportedAtUtc,
+        o.CancelledByUserId, o.CancelledAtUtc, o.CancellationReason);
 }
 
-public sealed class PerformDiagnosticOrderCommandHandler(IPatientClinicalRepository repository)
+public sealed class ScheduleDiagnosticOrderCommandHandler(
+    IPatientClinicalRepository repository,
+    ICurrentUser currentUser,
+    IClock clock)
+    : IRequestHandler<ScheduleDiagnosticOrderCommand, Result<DiagnosticOrderDto>>
+{
+    public async Task<Result<DiagnosticOrderDto>> Handle(ScheduleDiagnosticOrderCommand request, CancellationToken ct)
+    {
+        var order = await repository.GetDiagnosticOrderAsync(request.OrderId, ct);
+        if (order is null) return Error.NotFound("Diagnostic order not found.");
+
+        var result = order.Schedule(currentUser.UserId, clock.UtcNow);
+        if (result.IsFailure) return result.Error;
+
+        await repository.UpdateDiagnosticOrderAsync(order, ct);
+        return CreateDiagnosticOrderCommandHandler.MapOrder(order);
+    }
+}
+
+public sealed class PerformDiagnosticOrderCommandHandler(
+    IPatientClinicalRepository repository,
+    ICurrentUser currentUser,
+    IClock clock)
     : IRequestHandler<PerformDiagnosticOrderCommand, Result<DiagnosticOrderDto>>
 {
     public async Task<Result<DiagnosticOrderDto>> Handle(PerformDiagnosticOrderCommand request, CancellationToken ct)
@@ -137,7 +161,7 @@ public sealed class PerformDiagnosticOrderCommandHandler(IPatientClinicalReposit
         var order = await repository.GetDiagnosticOrderAsync(request.OrderId, ct);
         if (order is null) return Error.NotFound("Diagnostic order not found.");
 
-        var result = order.MarkPerformed(DateTime.UtcNow);
+        var result = order.MarkPerformed(currentUser.UserId, clock.UtcNow);
         if (result.IsFailure) return result.Error;
 
         await repository.UpdateDiagnosticOrderAsync(order, ct);
@@ -164,7 +188,10 @@ public sealed class ReportDiagnosticOrderCommandHandler(
     }
 }
 
-public sealed class CancelDiagnosticOrderCommandHandler(IPatientClinicalRepository repository)
+public sealed class CancelDiagnosticOrderCommandHandler(
+    IPatientClinicalRepository repository,
+    ICurrentUser currentUser,
+    IClock clock)
     : IRequestHandler<CancelDiagnosticOrderCommand, Result<DiagnosticOrderDto>>
 {
     public async Task<Result<DiagnosticOrderDto>> Handle(CancelDiagnosticOrderCommand request, CancellationToken ct)
@@ -172,7 +199,7 @@ public sealed class CancelDiagnosticOrderCommandHandler(IPatientClinicalReposito
         var order = await repository.GetDiagnosticOrderAsync(request.OrderId, ct);
         if (order is null) return Error.NotFound("Diagnostic order not found.");
 
-        var result = order.Cancel();
+        var result = order.Cancel(request.Reason, currentUser.UserId, clock.UtcNow);
         if (result.IsFailure) return result.Error;
 
         await repository.UpdateDiagnosticOrderAsync(order, ct);

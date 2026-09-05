@@ -210,6 +210,38 @@ public sealed class LabOrderCompletedHandler(
     }
 }
 
+/// <summary>
+/// Imaging/procedure report recorded → notify the ordering clinician the result
+/// is ready for review (same fan-out as lab results).
+/// </summary>
+public sealed class DiagnosticOrderReportedHandler(
+    IUserNotificationRepository notifications,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
+    IEnumerable<IUnitOfWork> unitsOfWork,
+    IClock clock)
+    : INotificationHandler<DomainEventNotification<DiagnosticOrderReportedDomainEvent>>
+{
+    public async Task Handle(
+        DomainEventNotification<DiagnosticOrderReportedDomainEvent> notification, CancellationToken ct)
+    {
+        var e = notification.DomainEvent;
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            [e.OrderedByUserId], NotificationCategory.DiagnosticResultReady, ct);
+
+        var created = new List<UserNotification>();
+        foreach (var userId in recipients)
+        {
+            await NotificationFanout.CreateAsync(notifications, created,
+                FacilityId.From(e.FacilityId), userId, NotificationCategory.DiagnosticResultReady,
+                "Imaging/procedure result ready",
+                "The report for the ordered imaging/procedure is ready for review.",
+                "DiagnosticOrder", e.DiagnosticOrderId, clock.UtcNow, ct);
+        }
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
+    }
+}
+
 // ── Pharmacy ────────────────────────────────────────────────────────────────────
 
 /// <summary>Prescription initiated → notify pharmacists to prepare it.</summary>

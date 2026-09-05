@@ -15,4 +15,6 @@ public sealed record CreateDiagnosticOrderRequestDto(
 
 public sealed record ReportDiagnosticOrderRequestDto(string Report);
 
+public sealed record CancelDiagnosticOrderRequestDto(string Reason);
+
 public sealed record UploadAttachmentRequestDto(string FileName, string ContentType, string Category);

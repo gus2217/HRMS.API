@@ -43,3 +43,20 @@ public sealed class ReportDiagnosticOrderCommandValidator : AbstractValidator<Re
         RuleFor(x => x.Report).NotEmpty().MaximumLength(8000);
     }
 }
+
+public sealed class ScheduleDiagnosticOrderCommandValidator : AbstractValidator<ScheduleDiagnosticOrderCommand>
+{
+    public ScheduleDiagnosticOrderCommandValidator()
+    {
+        RuleFor(x => x.OrderId).NotEmpty();
+    }
+}
+
+public sealed class CancelDiagnosticOrderCommandValidator : AbstractValidator<CancelDiagnosticOrderCommand>
+{
+    public CancelDiagnosticOrderCommandValidator()
+    {
+        RuleFor(x => x.OrderId).NotEmpty();
+        RuleFor(x => x.Reason).NotEmpty().MaximumLength(500);
+    }
+}
