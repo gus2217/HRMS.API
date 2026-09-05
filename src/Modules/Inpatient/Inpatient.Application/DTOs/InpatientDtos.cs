@@ -7,14 +7,16 @@ public sealed record WardDto(
     int TotalBeds,
     bool IsActive);
 
-public sealed record WardNoteDto(string Content, Guid AuthorUserId, DateTime RecordedAtUtc);
+public sealed record WardNoteDto(string Content, Guid AuthorUserId, DateTime RecordedAtUtc, string? AuthorName = null);
 
 public sealed record WardRecordAttachmentDto(
     Guid Id,
     string FileName,
     string ContentType,
     long SizeBytes,
-    DateTime UploadedAtUtc);
+    Guid UploadedByUserId,
+    DateTime UploadedAtUtc,
+    string? UploadedByName = null);
 
 public sealed record WardMedicalRecordDto(
     Guid Id,
@@ -32,7 +34,8 @@ public sealed record WardMedicalRecordDto(
     string? Assessment,
     string? Plan,
     bool IsComplete,
-    IReadOnlyList<WardRecordAttachmentDto> Attachments);
+    IReadOnlyList<WardRecordAttachmentDto> Attachments,
+    string? RecordedByName = null);
 
 public sealed record AdmissionSummaryDto(
     Guid Id,
@@ -70,7 +73,9 @@ public sealed record AdmissionDetailDto(
     DateTime? DischargedAtUtc,
     IReadOnlyList<WardNoteDto> Notes,
     IReadOnlyList<WardMedicalRecordDto> MedicalRecords,
-    bool HasCompleteMedicalRecord);
+    bool HasCompleteMedicalRecord,
+    string? AdmittingClinicianName = null,
+    string? AttendingClinicianName = null);
 
 public sealed record WardOccupancyDto(
     Guid WardId,

@@ -22,6 +22,8 @@ internal static class AdmissionMapper
                 r.RespiratoryRate, r.OxygenSaturation, r.WeightKg,
                 r.Subjective, r.Objective, r.Assessment, r.Plan, r.IsComplete,
                 r.Attachments.Select(at => new WardRecordAttachmentDto(
-                    at.Id, at.FileName, at.ContentType, at.SizeBytes, at.UploadedAtUtc)).ToArray())).ToArray(),
-            a.HasCompleteMedicalRecord);
+                    at.Id, at.FileName, at.ContentType, at.SizeBytes, at.UploadedByUserId, at.UploadedAtUtc)).ToArray())).ToArray(),
+            a.HasCompleteMedicalRecord,
+            AdmittingClinicianName: null,
+            AttendingClinicianName: null);
 }

@@ -28,22 +28,35 @@ public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepos
     {
         // Aggregate already tracked from GetByIdAsync. New children carry
         // client-generated keys; EF DetectChanges would classify them as Modified
-        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still Detached.
-        db.MarkNewChildrenAdded(admission);
-
-        // Medical records + their attachments are 1:N reference navigations (not
-        // enumerable props on the aggregate itself) — walk them explicitly.
-        foreach (var record in admission.MedicalRecords)
+        // (phantom UPDATE, 0 rows). Mark them Added explicitly while still
+        // Detached. Auto-detect must stay OFF across the whole walk — calling
+        // db.Entry(...) with auto-detect enabled re-runs DetectChanges and would
+        // reclassify a just-added grandchild (record attachment) as Modified
+        // before its Detached→Added check runs.
+        var autoDetect = db.ChangeTracker.AutoDetectChangesEnabled;
+        db.ChangeTracker.AutoDetectChangesEnabled = false;
+        try
         {
-            var entry = db.Entry(record);
-            if (entry.State == EntityState.Detached)
-                entry.State = EntityState.Added;
-            foreach (var attachment in record.Attachments)
+            db.MarkNewChildrenAdded(admission);
+
+            // Medical records + their attachments are 1:N reference navigations (not
+            // enumerable props on the aggregate itself) — walk them explicitly.
+            foreach (var record in admission.MedicalRecords)
             {
-                var aEntry = db.Entry(attachment);
-                if (aEntry.State == EntityState.Detached)
-                    aEntry.State = EntityState.Added;
+                var entry = db.Entry(record);
+                if (entry.State == EntityState.Detached)
+                    entry.State = EntityState.Added;
+                foreach (var attachment in record.Attachments)
+                {
+                    var aEntry = db.Entry(attachment);
+                    if (aEntry.State == EntityState.Detached)
+                        aEntry.State = EntityState.Added;
+                }
             }
+        }
+        finally
+        {
+            db.ChangeTracker.AutoDetectChangesEnabled = autoDetect;
         }
 
         return Task.CompletedTask;
@@ -98,8 +111,10 @@ public sealed class AdmissionRepository(InpatientDbContext db) : IAdmissionRepos
                 r.RespiratoryRate, r.OxygenSaturation, r.WeightKg,
                 r.Subjective, r.Objective, r.Assessment, r.Plan, r.IsComplete,
                 r.Attachments.Select(at => new WardRecordAttachmentDto(
-                    at.Id, at.FileName, at.ContentType, at.SizeBytes, at.UploadedAtUtc)).ToArray())).ToArray(),
-            a.HasCompleteMedicalRecord);
+                    at.Id, at.FileName, at.ContentType, at.SizeBytes, at.UploadedByUserId, at.UploadedAtUtc)).ToArray())).ToArray(),
+            a.HasCompleteMedicalRecord,
+            AdmittingClinicianName: null,
+            AttendingClinicianName: null);
     }
 
     public Task<int> GetOccupiedBedCountAsync(Guid wardId, CancellationToken ct = default)

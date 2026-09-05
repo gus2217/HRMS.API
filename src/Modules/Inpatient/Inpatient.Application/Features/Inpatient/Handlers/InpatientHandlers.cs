@@ -85,7 +85,8 @@ public sealed class AdmitPatientCommandHandler(
     IAdmissionRepository admissions,
     IWardRepository wards,
     ICurrentUser currentUser,
-    IClock clock)
+    IClock clock,
+    IUserIdentityLookup users)
     : IRequestHandler<AdmitPatientCommand, Result<AdmissionDetailDto>>
 {
     public async Task<Result<AdmissionDetailDto>> Handle(AdmitPatientCommand request, CancellationToken ct)
@@ -106,14 +107,15 @@ public sealed class AdmitPatientCommandHandler(
         if (admission.IsFailure) return admission.Error;
 
         await admissions.AddAsync(admission.Value, ct);
-        return AdmissionMapper.ToDetail(admission.Value);
+        return await AdmissionDetailEnricher.EnrichAsync(AdmissionMapper.ToDetail(admission.Value), users, ct);
     }
 }
 
 public sealed class DischargePatientCommandHandler(
     IAdmissionRepository admissions,
     IBillingStatusLookup billing,
-    IClock clock)
+    IClock clock,
+    IUserIdentityLookup users)
     : IRequestHandler<DischargePatientCommand, Result<AdmissionDetailDto>>
 {
     public async Task<Result<AdmissionDetailDto>> Handle(DischargePatientCommand request, CancellationToken ct)
@@ -126,14 +128,15 @@ public sealed class DischargePatientCommandHandler(
         if (result.IsFailure) return result.Error;
 
         await admissions.UpdateAsync(admission, ct);
-        return AdmissionMapper.ToDetail(admission);
+        return await AdmissionDetailEnricher.EnrichAsync(AdmissionMapper.ToDetail(admission), users, ct);
     }
 }
 
 public sealed class AddWardNoteCommandHandler(
     IAdmissionRepository admissions,
     ICurrentUser currentUser,
-    IClock clock)
+    IClock clock,
+    IUserIdentityLookup users)
     : IRequestHandler<AddWardNoteCommand, Result<AdmissionDetailDto>>
 {
     public async Task<Result<AdmissionDetailDto>> Handle(AddWardNoteCommand request, CancellationToken ct)
@@ -145,14 +148,15 @@ public sealed class AddWardNoteCommandHandler(
         if (result.IsFailure) return result.Error;
 
         await admissions.UpdateAsync(admission, ct);
-        return AdmissionMapper.ToDetail(admission);
+        return await AdmissionDetailEnricher.EnrichAsync(AdmissionMapper.ToDetail(admission), users, ct);
     }
 }
 
 public sealed class TransferPatientCommandHandler(
     IAdmissionRepository admissions,
     IWardRepository wards,
-    IClock clock)
+    IClock clock,
+    IUserIdentityLookup users)
     : IRequestHandler<TransferPatientCommand, Result<AdmissionDetailDto>>
 {
     public async Task<Result<AdmissionDetailDto>> Handle(TransferPatientCommand request, CancellationToken ct)
@@ -175,7 +179,7 @@ public sealed class TransferPatientCommandHandler(
         if (result.IsFailure) return result.Error;
 
         await admissions.UpdateAsync(admission, ct);
-        return AdmissionMapper.ToDetail(admission);
+        return await AdmissionDetailEnricher.EnrichAsync(AdmissionMapper.ToDetail(admission), users, ct);
     }
 }
 
@@ -183,7 +187,8 @@ public sealed class TransferPatientCommandHandler(
 public sealed class AddMedicalRecordCommandHandler(
     IAdmissionRepository admissions,
     ICurrentUser currentUser,
-    IClock clock)
+    IClock clock,
+    IUserIdentityLookup users)
     : IRequestHandler<AddMedicalRecordCommand, Result<AdmissionDetailDto>>
 {
     public async Task<Result<AdmissionDetailDto>> Handle(AddMedicalRecordCommand request, CancellationToken ct)
@@ -203,7 +208,7 @@ public sealed class AddMedicalRecordCommandHandler(
         if (result.IsFailure) return result.Error;
 
         await admissions.UpdateAsync(admission, ct);
-        return AdmissionMapper.ToDetail(admission);
+        return await AdmissionDetailEnricher.EnrichAsync(AdmissionMapper.ToDetail(admission), users, ct);
     }
 }
 
@@ -212,7 +217,8 @@ public sealed class AttachMedicalRecordFileCommandHandler(
     IAdmissionRepository admissions,
     IFileStorage fileStorage,
     ICurrentUser currentUser,
-    IClock clock)
+    IClock clock,
+    IUserIdentityLookup users)
     : IRequestHandler<AttachMedicalRecordFileCommand, Result<AdmissionDetailDto>>
 {
     public async Task<Result<AdmissionDetailDto>> Handle(AttachMedicalRecordFileCommand request, CancellationToken ct)
@@ -239,7 +245,7 @@ public sealed class AttachMedicalRecordFileCommandHandler(
         if (attach.IsFailure) return attach.Error;
 
         await admissions.UpdateAsync(admission, ct);
-        return AdmissionMapper.ToDetail(admission);
+        return await AdmissionDetailEnricher.EnrichAsync(AdmissionMapper.ToDetail(admission), users, ct);
     }
 
     private async Task<Admission?> FindByMedicalRecordAsync(Guid medicalRecordId, CancellationToken ct)
@@ -267,13 +273,14 @@ public sealed class AttachMedicalRecordFileCommandHandler(
     }
 }
 
-public sealed class GetAdmissionQueryHandler(IAdmissionRepository admissions)
+public sealed class GetAdmissionQueryHandler(IAdmissionRepository admissions, IUserIdentityLookup users)
     : IRequestHandler<GetAdmissionQuery, Result<AdmissionDetailDto>>
 {
     public async Task<Result<AdmissionDetailDto>> Handle(GetAdmissionQuery request, CancellationToken ct)
     {
         var detail = await admissions.GetDetailAsync(request.AdmissionId, ct);
-        return detail is null ? Error.NotFound("Admission not found.") : detail;
+        if (detail is null) return Error.NotFound("Admission not found.");
+        return await AdmissionDetailEnricher.EnrichAsync(detail, users, ct);
     }
 }
 
