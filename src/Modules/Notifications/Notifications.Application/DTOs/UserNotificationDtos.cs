@@ -8,6 +8,7 @@ public sealed record UserNotificationDto(
     string Message,
     string EntityType,
     Guid? EntityId,
+    string? Link,
     bool IsRead,
     DateTime CreatedAtUtc);
 

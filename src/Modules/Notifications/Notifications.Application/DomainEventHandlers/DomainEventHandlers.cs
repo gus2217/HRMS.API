@@ -26,8 +26,11 @@ public static class NotificationRoles
 {
     public const string Doctor = "Doctor";
     public const string Nurse = "Nurse";
+    public const string Receptionist = "Receptionist";
     public const string Pharmacist = "Pharmacist";
     public const string LabTechnician = "LabTechnician";
+    public const string Accountant = "Accountant";
+    public const string Cashier = "Cashier";
 }
 
 /// <summary>Creates a notification, buffers it for push, and returns it.</summary>
@@ -43,11 +46,12 @@ internal static class NotificationFanout
         string message,
         string entityType,
         Guid? entityId,
+        string? link,
         DateTime createdAtUtc,
         CancellationToken ct)
     {
         var n = UserNotification.Create(
-            facilityId, recipientUserId, category, title, message, entityType, entityId, createdAtUtc);
+            facilityId, recipientUserId, category, title, message, entityType, entityId, link, createdAtUtc);
         if (n.IsSuccess)
         {
             await notifications.AddAsync(n.Value, ct);
@@ -82,7 +86,7 @@ public sealed class ConsultationRequestedHandler(
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.ConsultationRequested,
                 "Consultation requested",
                 $"A patient has been queued for the {e.ClinicType} clinic.",
-                "Queue", e.QueueEntryId, clock.UtcNow, ct);
+                "Queue", e.QueueEntryId, "/queue", clock.UtcNow, ct);
         }
         await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
@@ -112,7 +116,7 @@ public sealed class AppointmentRequestedHandler(
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.AppointmentRequested,
                 "Appointment booked",
                 $"A new appointment has been booked for the {e.ClinicType} clinic.",
-                "Appointment", e.AppointmentId, clock.UtcNow, ct);
+                "Appointment", e.AppointmentId, "/appointments", clock.UtcNow, ct);
         }
         await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
@@ -142,7 +146,7 @@ public sealed class AppointmentRequestRaisedHandler(
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.AppointmentRequested,
                 "Appointment request",
                 $"Reception has raised an appointment request for the {e.ClinicType} clinic — please review.",
-                "AppointmentRequest", e.AppointmentRequestId, clock.UtcNow, ct);
+                "AppointmentRequest", e.AppointmentRequestId, "/appointments", clock.UtcNow, ct);
         }
         await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
@@ -175,7 +179,7 @@ public sealed class LabOrderPlacedHandler(
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.LabResultReady,
                 "Lab order placed",
                 $"A lab order ({e.Tests.Count} test(s)) has been placed for this patient.",
-                "LabOrder", e.LabOrderId, clock.UtcNow, ct);
+                "LabOrder", e.LabOrderId, "/lab", clock.UtcNow, ct);
         }
         await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
@@ -204,7 +208,7 @@ public sealed class LabOrderCompletedHandler(
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.LabResultReady,
                 "Lab results ready",
                 "All tests on the lab order have been resulted — the results are ready for review.",
-                "LabOrder", e.LabOrderId, clock.UtcNow, ct);
+                "LabOrder", e.LabOrderId, $"/patients/{e.PatientId}", clock.UtcNow, ct);
         }
         await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
@@ -236,7 +240,7 @@ public sealed class DiagnosticOrderReportedHandler(
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.DiagnosticResultReady,
                 "Imaging/procedure result ready",
                 "The report for the ordered imaging/procedure is ready for review.",
-                "DiagnosticOrder", e.DiagnosticOrderId, clock.UtcNow, ct);
+                "DiagnosticOrder", e.DiagnosticOrderId, $"/patients/{e.PatientId}", clock.UtcNow, ct);
         }
         await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
@@ -269,7 +273,7 @@ public sealed class PrescriptionInitiatedHandler(
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.PrescriptionInitiated,
                 "Prescription to dispense",
                 $"A new prescription ({e.Items.Count} item(s)) is awaiting dispensing.",
-                "Prescription", e.PrescriptionId, clock.UtcNow, ct);
+                "Prescription", e.PrescriptionId, "/pharmacy", clock.UtcNow, ct);
         }
         await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
@@ -301,7 +305,7 @@ public sealed class PatientAdmittedHandler(
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.PatientAdmitted,
                 "Patient admitted",
                 $"A patient has been admitted to {e.WardName}.",
-                "Admission", e.AdmissionId, clock.UtcNow, ct);
+                "Admission", e.AdmissionId, "/wards", clock.UtcNow, ct);
         }
         await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
@@ -331,7 +335,7 @@ public sealed class PatientDischargedHandler(
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.PatientDischarged,
                 "Patient discharged",
                 "A patient has been discharged.",
-                "Admission", e.AdmissionId, clock.UtcNow, ct);
+                "Admission", e.AdmissionId, "/wards", clock.UtcNow, ct);
         }
         await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
@@ -361,7 +365,44 @@ public sealed class PatientTransferredHandler(
                 FacilityId.From(e.FacilityId), userId, NotificationCategory.PatientTransferred,
                 "Patient transferred",
                 $"A patient has been transferred from {e.FromWardName} to {e.ToWardName}.",
-                "Admission", e.AdmissionId, clock.UtcNow, ct);
+                "Admission", e.AdmissionId, "/wards", clock.UtcNow, ct);
+        }
+        await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
+    }
+}
+
+// ── Visit complete → billing desk (accountant / receptionist / cashier) ─────────
+
+/// <summary>
+/// Consultation completed → the visit is billed (auto-billing issues the invoice),
+/// so the accounting/reception/cashier staff are alerted to collect/close the bill.
+/// </summary>
+public sealed class ConsultationCompletedBillingNotificationHandler(
+    IUserNotificationRepository notifications,
+    IUserRoleLookup roles,
+    INotificationPreferenceRepository preferences,
+    INotificationPusher pusher,
+    IEnumerable<IUnitOfWork> unitsOfWork,
+    IClock clock)
+    : INotificationHandler<DomainEventNotification<ConsultationCompletedDomainEvent>>
+{
+    public async Task Handle(
+        DomainEventNotification<ConsultationCompletedDomainEvent> notification, CancellationToken ct)
+    {
+        var e = notification.DomainEvent;
+        var recipients = await preferences.FilterInAppEnabledAsync(
+            await roles.GetUserIdsByRolesAsync(
+                [NotificationRoles.Accountant, NotificationRoles.Receptionist, NotificationRoles.Cashier], ct),
+            NotificationCategory.InvoiceIssued, ct);
+
+        var created = new List<UserNotification>();
+        foreach (var userId in recipients)
+        {
+            await NotificationFanout.CreateAsync(notifications, created,
+                FacilityId.From(e.FacilityId), userId, NotificationCategory.InvoiceIssued,
+                "Bill ready — collect payment",
+                "A consultation has been completed and the visit invoice issued. Collect payment at billing.",
+                "Consultation", e.ConsultationId, "/billing", clock.UtcNow, ct);
         }
         await NotificationCommit.CommitAndPushAsync(unitsOfWork, pusher, created, ct);
     }
@@ -390,7 +431,7 @@ internal static class NotificationCommit
         {
             var dto = new UserNotificationDto(
                 n.Id, n.Category.ToString(), n.Title, n.Message,
-                n.EntityType, n.EntityId, n.IsRead, n.CreatedAtUtc);
+                n.EntityType, n.EntityId, n.Link, n.IsRead, n.CreatedAtUtc);
             await pusher.PushAsync(n.RecipientUserId, dto, ct);
         }
     }

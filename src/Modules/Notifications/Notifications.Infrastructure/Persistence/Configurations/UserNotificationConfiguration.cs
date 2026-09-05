@@ -17,6 +17,7 @@ public sealed class UserNotificationConfiguration : IEntityTypeConfiguration<Use
         builder.Property(n => n.Message).HasMaxLength(2000).IsRequired();
         builder.Property(n => n.EntityType).HasMaxLength(64);
         builder.Property(n => n.EntityId);
+        builder.Property(n => n.Link).HasMaxLength(300);
         builder.Property(n => n.IsRead).IsRequired();
         builder.Property(n => n.ReadAtUtc);
         builder.Property(n => n.CreatedAtUtc).IsRequired();

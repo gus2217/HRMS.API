@@ -61,5 +61,5 @@ public sealed class UserNotificationRepository(NotificationsDbContext db) : IUse
 
     private static UserNotificationDto Map(UserNotification n) => new(
         n.Id, n.Category.ToString(), n.Title, n.Message, n.EntityType, n.EntityId,
-        n.IsRead, n.CreatedAtUtc);
+        n.Link, n.IsRead, n.CreatedAtUtc);
 }

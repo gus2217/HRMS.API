@@ -22,6 +22,7 @@ public sealed class UserNotification : AggregateRoot<Guid>
         string message,
         string entityType,
         Guid? entityId,
+        string? link,
         DateTime createdAtUtc)
         : base(id)
     {
@@ -32,6 +33,7 @@ public sealed class UserNotification : AggregateRoot<Guid>
         Message = message;
         EntityType = entityType;
         EntityId = entityId;
+        Link = link;
         CreatedAtUtc = createdAtUtc;
         IsRead = false;
     }
@@ -45,6 +47,12 @@ public sealed class UserNotification : AggregateRoot<Guid>
     /// <summary>Deep-link target type, e.g. "Consultation", "LabOrder", "Prescription".</summary>
     public string EntityType { get; private set; } = string.Empty;
     public Guid? EntityId { get; private set; }
+
+    /// <summary>
+    /// Feature route the recipient should open when they act on this
+    /// notification (e.g. "/queue", "/lab", "/billing", "/patients/{id}").
+    /// </summary>
+    public string? Link { get; private set; }
     public bool IsRead { get; private set; }
     public DateTime? ReadAtUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
@@ -57,6 +65,7 @@ public sealed class UserNotification : AggregateRoot<Guid>
         string message,
         string entityType,
         Guid? entityId,
+        string? link,
         DateTime createdAtUtc)
     {
         if (recipientUserId == Guid.Empty) return Error.Validation("Recipient is required.");
@@ -65,7 +74,7 @@ public sealed class UserNotification : AggregateRoot<Guid>
 
         return new UserNotification(
             Guid.NewGuid(), facilityId, recipientUserId, category,
-            title.Trim(), message.Trim(), entityType, entityId, createdAtUtc);
+            title.Trim(), message.Trim(), entityType, entityId, link, createdAtUtc);
     }
 
     public Result MarkRead(DateTime readAtUtc)

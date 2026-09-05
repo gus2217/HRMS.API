@@ -12,5 +12,6 @@ public enum NotificationCategory
     PatientDischarged,
     PatientTransferred,
     ReferralCreated,
+    InvoiceIssued,
     System
 }

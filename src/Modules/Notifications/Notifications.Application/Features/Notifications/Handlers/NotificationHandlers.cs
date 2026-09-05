@@ -58,7 +58,7 @@ public sealed class MarkNotificationReadCommandHandler(
         return new UserNotificationDto(
             notification.Id, notification.Category.ToString(), notification.Title,
             notification.Message, notification.EntityType, notification.EntityId,
-            notification.IsRead, notification.CreatedAtUtc);
+            notification.Link, notification.IsRead, notification.CreatedAtUtc);
     }
 }
 
