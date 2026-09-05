@@ -35,8 +35,7 @@ public sealed class UserNotificationRepository(NotificationsDbContext db) : IUse
             query = query.Where(n => !n.IsRead);
 
         return await query
-            .OrderByDescending(n => n.IsRead)
-            .ThenByDescending(n => n.CreatedAtUtc)
+            .OrderByDescending(n => n.CreatedAtUtc)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(n => Map(n))
