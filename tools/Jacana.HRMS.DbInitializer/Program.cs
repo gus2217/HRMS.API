@@ -181,6 +181,7 @@ static async Task SeedIdentityAsync(string cs, string password)
             "Laboratory.Order", "Pharmacy.Dispense",
             "Queue.View", "Queue.Accept",
             "Appointment.Create", "Appointment.View", "Appointment.Approve",
+            "Billing.View", // live bill in the consult workspace — prescribe within the patient's budget
         },
         [nameof(SystemRole.Nurse)] = new[]
         {
