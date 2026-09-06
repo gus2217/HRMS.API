@@ -12,10 +12,12 @@ internal static class PatientMapper
 {
     public static PatientDetailDto ToDetail(Patient p) =>
         new(
-            p.Id, p.PatientNumber, p.FirstName, p.LastName, p.DateOfBirth,
+            p.Id, p.PatientNumber, p.FirstName, p.MiddleName, p.LastName, p.DateOfBirth,
             p.Gender.ToString(), p.MaritalStatus.ToString(), p.Phone.Value,
             p.InsuranceType.ToString(), p.InsuranceNumber, p.ClinicType.ToString(),
             p.Address.County, p.Address.SubCounty, p.Address.Ward, p.Address.Line1,
+            p.Address.Village, p.Address.Landmark,
+            p.HighestEducation?.ToString(), p.Occupation, p.AlternativePhone,
             p.Status.ToString(),
             p.Allergies.Select(a => new AllergyDto(a.Id, a.Substance, a.Severity.ToString(), a.Notes)).ToArray(),
             p.Consents.Select(c => new ConsentDto(c.Type.ToString(), c.Granted, c.RecordedByUserId, null, c.RecordedAtUtc)).ToArray(),

@@ -15,6 +15,7 @@ public sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.HasIndex(p => p.PatientNumber).IsUnique();
 
         builder.Property(p => p.FirstName).HasMaxLength(100).IsRequired();
+        builder.Property(p => p.MiddleName).HasMaxLength(100);
         builder.Property(p => p.LastName).HasMaxLength(100).IsRequired();
         builder.Property(p => p.DateOfBirth).IsRequired();
         builder.Property(p => p.Gender).HasConversion<string>().HasMaxLength(16);
@@ -22,6 +23,9 @@ public sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
         builder.Property(p => p.InsuranceType).HasConversion<string>().HasMaxLength(16);
         builder.Property(p => p.ClinicType).HasConversion<string>().HasMaxLength(48);
         builder.Property(p => p.Status).HasConversion<string>().HasMaxLength(16);
+        builder.Property(p => p.AlternativePhone).HasMaxLength(20);
+        builder.Property(p => p.HighestEducation).HasConversion<string>().HasMaxLength(24);
+        builder.Property(p => p.Occupation).HasMaxLength(120);
 
         builder.ComplexProperty(p => p.FacilityId, f => f.Property(x => x.Value).HasColumnName("FacilityId").IsRequired());
         builder.ComplexProperty(p => p.Phone, ph => ph.Property(x => x.Value).HasColumnName("Phone").HasMaxLength(20).IsRequired());
@@ -31,6 +35,8 @@ public sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
             a.Property(x => x.SubCounty).HasColumnName("SubCounty").HasMaxLength(100);
             a.Property(x => x.Ward).HasColumnName("Ward").HasMaxLength(100);
             a.Property(x => x.Line1).HasColumnName("AddressLine1").HasMaxLength(200);
+            a.Property(x => x.Village).HasColumnName("Village").HasMaxLength(120);
+            a.Property(x => x.Landmark).HasColumnName("Landmark").HasMaxLength(200);
         });
 
         builder.Property(p => p.InsuranceNumber).HasMaxLength(64);

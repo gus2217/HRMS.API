@@ -1,5 +1,6 @@
 using Jacana.PatientRegistration.Application.Abstractions;
 using Jacana.PatientRegistration.Application.DTOs;
+using Jacana.PatientRegistration.Domain;
 using Jacana.SharedKernel.Application;
 using Jacana.SharedKernel.Application.Abstractions;
 using Jacana.SharedKernel.Application.Common;
@@ -32,7 +33,12 @@ public sealed class CheckPatientDuplicatesQueryHandler(
 
         return Result.Success<IReadOnlyList<DuplicateCandidateDto>>(matches.Select(p =>
             new DuplicateCandidateDto(
-                p.Id, p.PatientNumber, $"{p.FirstName} {p.LastName}", p.DateOfBirth,
+                p.Id, p.PatientNumber, FullName(p), p.DateOfBirth,
                 p.Phone.Value, p.NationalId?.Value)).ToArray());
     }
+
+    private static string FullName(Patient p)
+        => string.IsNullOrWhiteSpace(p.MiddleName)
+            ? $"{p.FirstName} {p.LastName}"
+            : $"{p.FirstName} {p.MiddleName} {p.LastName}";
 }

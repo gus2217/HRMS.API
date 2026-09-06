@@ -29,7 +29,7 @@ public sealed class AppointmentRepository(ClinicalDbContext db) : IAppointmentRe
 
     public async Task<IReadOnlyList<AppointmentSummaryDto>> SearchAsync(
         string? clinicType, string? status, DateTime? fromUtc, DateTime? toUtc,
-        int pageNumber, int pageSize, CancellationToken ct = default)
+        Guid? patientId, int pageNumber, int pageSize, CancellationToken ct = default)
     {
         var query = db.Appointments.AsNoTracking();
 
@@ -40,6 +40,7 @@ public sealed class AppointmentRepository(ClinicalDbContext db) : IAppointmentRe
             query = query.Where(a => a.Status == parsed);
         if (fromUtc is not null) query = query.Where(a => a.ScheduledAtUtc >= fromUtc);
         if (toUtc is not null) query = query.Where(a => a.ScheduledAtUtc < toUtc);
+        if (patientId is not null) query = query.Where(a => a.PatientId == patientId);
 
         return await query
             .OrderBy(a => a.ScheduledAtUtc)
@@ -50,7 +51,8 @@ public sealed class AppointmentRepository(ClinicalDbContext db) : IAppointmentRe
     }
 
     public Task<int> CountAsync(
-        string? clinicType, string? status, DateTime? fromUtc, DateTime? toUtc, CancellationToken ct = default)
+        string? clinicType, string? status, DateTime? fromUtc, DateTime? toUtc,
+        Guid? patientId, CancellationToken ct = default)
     {
         var query = db.Appointments.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(clinicType))
@@ -60,6 +62,7 @@ public sealed class AppointmentRepository(ClinicalDbContext db) : IAppointmentRe
             query = query.Where(a => a.Status == parsed);
         if (fromUtc is not null) query = query.Where(a => a.ScheduledAtUtc >= fromUtc);
         if (toUtc is not null) query = query.Where(a => a.ScheduledAtUtc < toUtc);
+        if (patientId is not null) query = query.Where(a => a.PatientId == patientId);
         return query.CountAsync(ct);
     }
 

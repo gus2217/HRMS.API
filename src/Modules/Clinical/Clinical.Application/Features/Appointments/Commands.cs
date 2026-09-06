@@ -40,7 +40,8 @@ public sealed record SearchAppointmentsQuery(
     DateTime? FromUtc,
     DateTime? ToUtc,
     int PageNumber,
-    int PageSize)
+    int PageSize,
+    Guid? PatientId = null)
     : IQuery<Result<PagedResult<AppointmentDto>>>;
 
 public sealed record GetAppointmentsByMonthQuery(

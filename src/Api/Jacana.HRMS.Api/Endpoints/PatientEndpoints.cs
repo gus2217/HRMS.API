@@ -50,7 +50,9 @@ public static class PatientEndpoints
             request.FirstName, request.LastName, request.DateOfBirth,
             request.Gender, request.Phone,
             request.NationalId, request.InsuranceType, request.InsuranceNumber, request.ClinicType,
-            request.County, request.SubCounty, request.Ward, request.Line1), ct);
+            request.County, request.SubCounty, request.Ward, request.Line1,
+            request.MiddleName, request.Village, request.Landmark,
+            request.EducationLevel, request.Occupation, request.AlternativePhone), ct);
 
         if (result.IsFailure) return MapError(result.Error);
 
@@ -87,7 +89,9 @@ public static class PatientEndpoints
         var result = await sender.Send(new UpdatePatientDemographicsCommand(
             id, request.FirstName, request.LastName, request.DateOfBirth,
             request.Gender, request.MaritalStatus, request.Phone,
-            request.County, request.SubCounty, request.Ward, request.Line1), ct);
+            request.County, request.SubCounty, request.Ward, request.Line1,
+            request.MiddleName, request.Village, request.Landmark,
+            request.EducationLevel, request.Occupation, request.AlternativePhone), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

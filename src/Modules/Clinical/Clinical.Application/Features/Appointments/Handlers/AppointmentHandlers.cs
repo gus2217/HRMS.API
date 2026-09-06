@@ -215,9 +215,9 @@ public sealed class SearchAppointmentsQueryHandler(
     {
         var items = await appointments.SearchAsync(
             request.ClinicType, request.Status, request.FromUtc, request.ToUtc,
-            request.PageNumber, request.PageSize, ct);
+            request.PatientId, request.PageNumber, request.PageSize, ct);
         var total = await appointments.CountAsync(
-            request.ClinicType, request.Status, request.FromUtc, request.ToUtc, ct);
+            request.ClinicType, request.Status, request.FromUtc, request.ToUtc, request.PatientId, ct);
 
         var identities = await patients.GetIdentitiesAsync(items.Select(i => i.PatientId).ToArray(), ct);
         var rows = items.Select(i => ToDto(i, identities)).ToArray();

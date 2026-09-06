@@ -18,7 +18,13 @@ public sealed record RegisterPatientRequestDto(
     string County,
     string? SubCounty,
     string? Ward,
-    string? Line1);
+    string? Line1,
+    string? MiddleName = null,
+    string? Village = null,
+    string? Landmark = null,
+    EducationLevel? EducationLevel = null,
+    string? Occupation = null,
+    string? AlternativePhone = null);
 
 public sealed record UpdatePatientDemographicsRequestDto(
     string FirstName,
@@ -30,7 +36,13 @@ public sealed record UpdatePatientDemographicsRequestDto(
     string County,
     string? SubCounty,
     string? Ward,
-    string? Line1);
+    string? Line1,
+    string? MiddleName = null,
+    string? Village = null,
+    string? Landmark = null,
+    EducationLevel? EducationLevel = null,
+    string? Occupation = null,
+    string? AlternativePhone = null);
 
 public sealed record RegisterAllergyRequestDto(
     string Substance,

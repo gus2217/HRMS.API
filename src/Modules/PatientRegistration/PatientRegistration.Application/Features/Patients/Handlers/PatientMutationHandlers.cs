@@ -16,12 +16,23 @@ public sealed class UpdatePatientDemographicsCommandHandler(IPatientRepository p
 
         var phone = PhoneNumber.Create(request.Phone);
         if (phone.IsFailure) return phone.Error;
-        var address = Address.Create(request.County, request.SubCounty, request.Ward, request.Line1);
+        var address = Address.Create(request.County, request.SubCounty, request.Ward, request.Line1,
+            request.Village, request.Landmark);
         if (address.IsFailure) return address.Error;
+
+        string? alternativePhone = null;
+        if (!string.IsNullOrWhiteSpace(request.AlternativePhone))
+        {
+            var alt = PhoneNumber.TryNormalize(request.AlternativePhone);
+            if (alt is null)
+                return Error.Validation("Alternative phone is not a valid Kenyan number.");
+            alternativePhone = alt;
+        }
 
         var result = patient.UpdateDemographics(
             request.FirstName, request.LastName, request.DateOfBirth,
-            request.Gender, request.MaritalStatus, phone.Value, address.Value);
+            request.Gender, request.MaritalStatus, phone.Value, address.Value,
+            request.MiddleName, alternativePhone, request.EducationLevel, request.Occupation);
         if (result.IsFailure) return result.Error;
 
         await patients.UpdateAsync(patient, ct);

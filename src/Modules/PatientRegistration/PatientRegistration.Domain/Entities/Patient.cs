@@ -48,11 +48,19 @@ public sealed class Patient : AggregateRoot<Guid>
     public FacilityId FacilityId { get; private set; } = null!;
     public string PatientNumber { get; private set; } = string.Empty;
     public string FirstName { get; private set; } = string.Empty;
+    /// <summary>Middle name — part of the standard KenyaEMR person name model (given/middle/family).</summary>
+    public string? MiddleName { get; private set; }
     public string LastName { get; private set; } = string.Empty;
     public DateOnly DateOfBirth { get; private set; }
     public Gender Gender { get; private set; }
     public MaritalStatus MaritalStatus { get; private set; }
     public PhoneNumber Phone { get; private set; } = null!;
+    /// <summary>Alternative phone number (KenyaEMR person attribute).</summary>
+    public string? AlternativePhone { get; private set; }
+    /// <summary>Highest education level attained (KenyaEMR person attribute).</summary>
+    public EducationLevel? HighestEducation { get; private set; }
+    /// <summary>Occupation / profession (KenyaEMR person attribute).</summary>
+    public string? Occupation { get; private set; }
     public NationalId? NationalId { get; private set; }
     public InsuranceType InsuranceType { get; private set; }
     public string? InsuranceNumber { get; private set; }
@@ -76,7 +84,11 @@ public sealed class Patient : AggregateRoot<Guid>
         Address address,
         InsuranceType insuranceType,
         string? insuranceNumber,
-        ClinicType clinicType)
+        ClinicType clinicType,
+        string? middleName = null,
+        string? alternativePhone = null,
+        EducationLevel? highestEducation = null,
+        string? occupation = null)
     {
         if (string.IsNullOrWhiteSpace(patientNumber))
             return Error.Validation("Patient number is required.");
@@ -91,10 +103,20 @@ public sealed class Patient : AggregateRoot<Guid>
         if (insuranceType != InsuranceType.Private && string.IsNullOrWhiteSpace(insuranceNumber))
             return Error.Validation("Insurance number is required for insured patients.");
 
-        return new Patient(id, facilityId, patientNumber, firstName.Trim(), lastName.Trim(),
+        var patient = new Patient(id, facilityId, patientNumber, firstName.Trim(), lastName.Trim(),
             dateOfBirth, gender, phone, address, insuranceType,
             insuranceNumber?.Trim(), clinicType);
+        patient.MiddleName = NullIfEmpty(middleName);
+        patient.AlternativePhone = NullIfEmpty(alternativePhone);
+        if (highestEducation is not null && !Enum.IsDefined(highestEducation.Value))
+            return Error.Validation("Education level is invalid.");
+        patient.HighestEducation = highestEducation;
+        patient.Occupation = NullIfEmpty(occupation);
+        return patient;
     }
+
+    private static string? NullIfEmpty(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     public Result RegisterAllergy(string substance, AllergySeverity severity, string? notes)
     {
@@ -144,7 +166,9 @@ public sealed class Patient : AggregateRoot<Guid>
     /// Updates demographics. Guards: required identity fields cannot be nulled out.
     /// </summary>
     public Result UpdateDemographics(string firstName, string lastName, DateOnly dateOfBirth,
-        Gender gender, MaritalStatus maritalStatus, PhoneNumber phone, Address address)
+        Gender gender, MaritalStatus maritalStatus, PhoneNumber phone, Address address,
+        string? middleName = null, string? alternativePhone = null,
+        EducationLevel? highestEducation = null, string? occupation = null)
     {
         if (string.IsNullOrWhiteSpace(firstName))
             return Error.Validation("First name cannot be empty.");
@@ -158,6 +182,12 @@ public sealed class Patient : AggregateRoot<Guid>
         MaritalStatus = maritalStatus;
         Phone = phone;
         Address = address;
+        MiddleName = NullIfEmpty(middleName);
+        AlternativePhone = NullIfEmpty(alternativePhone);
+        if (highestEducation is not null && !Enum.IsDefined(highestEducation.Value))
+            return Error.Validation("Education level is invalid.");
+        HighestEducation = highestEducation;
+        Occupation = NullIfEmpty(occupation);
         return Result.Success();
     }
 }

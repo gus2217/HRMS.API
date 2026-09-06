@@ -5,6 +5,21 @@ public enum AllergySeverity { Mild, Moderate, Severe, LifeThreatening }
 public enum ConsentType { TreatmentConsent, DataSharingConsent, ShaDataSharingConsent, ResearchConsent }
 
 /// <summary>
+/// Highest education level attained — one of the standard KenyaEMR person
+/// attributes collected at registration (OpenMRS person attribute, education
+/// level concept).
+/// </summary>
+public enum EducationLevel
+{
+    None,
+    Primary,
+    Secondary,
+    Tertiary,
+    University,
+    Other
+}
+
+/// <summary>
 /// How the patient intends to pay for care. SHA = national Social Health
 /// Authority cover, Other = any other insurer/scheme, Private = self-pay.
 /// </summary>

@@ -13,11 +13,11 @@ public interface IAppointmentRepository
 
     Task<IReadOnlyList<AppointmentSummaryDto>> SearchAsync(
         string? clinicType, string? status, DateTime? fromUtc, DateTime? toUtc,
-        int pageNumber, int pageSize, CancellationToken ct = default);
+        Guid? patientId, int pageNumber, int pageSize, CancellationToken ct = default);
 
     Task<int> CountAsync(
         string? clinicType, string? status, DateTime? fromUtc, DateTime? toUtc,
-        CancellationToken ct = default);
+        Guid? patientId, CancellationToken ct = default);
 
     /// <summary>Appointments for a month (calendar view), optionally clinic-filtered.</summary>
     Task<IReadOnlyList<AppointmentSummaryDto>> GetByMonthAsync(

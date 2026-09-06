@@ -17,7 +17,13 @@ public sealed record RegisterPatientCommand(
     string County,
     string? SubCounty,
     string? Ward,
-    string? Line1)
+    string? Line1,
+    string? MiddleName = null,
+    string? Village = null,
+    string? Landmark = null,
+    Domain.EducationLevel? EducationLevel = null,
+    string? Occupation = null,
+    string? AlternativePhone = null)
     : ICommand<Result<RegisterPatientResponseDto>>;
 
 public sealed record UpdatePatientDemographicsCommand(
@@ -31,7 +37,13 @@ public sealed record UpdatePatientDemographicsCommand(
     string County,
     string? SubCounty,
     string? Ward,
-    string? Line1)
+    string? Line1,
+    string? MiddleName = null,
+    string? Village = null,
+    string? Landmark = null,
+    Domain.EducationLevel? EducationLevel = null,
+    string? Occupation = null,
+    string? AlternativePhone = null)
     : ICommand<Result<PatientDetailDto>>;
 
 public sealed record RegisterAllergyCommand(

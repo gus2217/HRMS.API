@@ -90,12 +90,15 @@ internal static class Masked
         => d with
         {
             Phone = null,
+            AlternativePhone = null,
             NationalId = null,
             InsuranceNumber = null,
             County = string.Empty,
             SubCounty = null,
             Ward = null,
             Line1 = null,
+            Village = null,
+            Landmark = null,
             NextOfKin = [],
         };
 }

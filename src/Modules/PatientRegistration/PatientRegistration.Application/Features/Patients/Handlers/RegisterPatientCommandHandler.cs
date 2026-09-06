@@ -23,8 +23,18 @@ public sealed class RegisterPatientCommandHandler(
         var phoneResult = PhoneNumber.Create(request.Phone);
         if (phoneResult.IsFailure) return phoneResult.Error;
 
-        var addressResult = Address.Create(request.County, request.SubCounty, request.Ward, request.Line1);
+        var addressResult = Address.Create(request.County, request.SubCounty, request.Ward, request.Line1,
+            request.Village, request.Landmark);
         if (addressResult.IsFailure) return addressResult.Error;
+
+        string? alternativePhone = null;
+        if (!string.IsNullOrWhiteSpace(request.AlternativePhone))
+        {
+            var alt = PhoneNumber.TryNormalize(request.AlternativePhone);
+            if (alt is null)
+                return Error.Validation("Alternative phone is not a valid Kenyan number.");
+            alternativePhone = alt;
+        }
 
         NationalId? nationalId = null;
         if (!string.IsNullOrWhiteSpace(request.NationalId))
@@ -43,7 +53,7 @@ public sealed class RegisterPatientCommandHandler(
         {
             return new RegisterPatientResponseDto(Guid.Empty, string.Empty,
                 candidates.Select(c => new DuplicateCandidateDto(
-                    c.Id, c.PatientNumber, $"{c.FirstName} {c.LastName}", c.DateOfBirth,
+                    c.Id, c.PatientNumber, FullName(c), c.DateOfBirth,
                     c.Phone.Value, c.NationalId?.Value)).ToArray());
         }
 
@@ -61,7 +71,11 @@ public sealed class RegisterPatientCommandHandler(
             addressResult.Value,
             request.InsuranceType,
             request.InsuranceNumber,
-            request.ClinicType);
+            request.ClinicType,
+            request.MiddleName,
+            alternativePhone,
+            request.EducationLevel,
+            request.Occupation);
 
         if (patientResult.IsFailure) return patientResult.Error;
 
@@ -74,4 +88,9 @@ public sealed class RegisterPatientCommandHandler(
 
         return new RegisterPatientResponseDto(patient.Id, patient.PatientNumber, []);
     }
+
+    private static string FullName(Patient p)
+        => string.IsNullOrWhiteSpace(p.MiddleName)
+            ? $"{p.FirstName} {p.LastName}"
+            : $"{p.FirstName} {p.MiddleName} {p.LastName}";
 }

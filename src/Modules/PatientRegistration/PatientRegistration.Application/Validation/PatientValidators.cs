@@ -9,9 +9,17 @@ public sealed class RegisterPatientCommandValidator : AbstractValidator<Register
     {
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.MiddleName).MaximumLength(100);
         RuleFor(x => x.DateOfBirth).NotEmpty();
         RuleFor(x => x.Phone).NotEmpty();
         RuleFor(x => x.County).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.SubCounty).MaximumLength(100);
+        RuleFor(x => x.Ward).MaximumLength(100);
+        RuleFor(x => x.Village).MaximumLength(120);
+        RuleFor(x => x.Landmark).MaximumLength(200);
+        RuleFor(x => x.Occupation).MaximumLength(120);
+        RuleFor(x => x.AlternativePhone).MaximumLength(20);
+        RuleFor(x => x.EducationLevel).IsInEnum();
         RuleFor(x => x.InsuranceType).IsInEnum();
         RuleFor(x => x.ClinicType).IsInEnum();
         RuleFor(x => x.InsuranceNumber).MaximumLength(64);
@@ -29,8 +37,10 @@ public sealed class UpdatePatientDemographicsCommandValidator : AbstractValidato
         RuleFor(x => x.PatientId).NotEmpty();
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.MiddleName).MaximumLength(100);
         RuleFor(x => x.Phone).NotEmpty();
         RuleFor(x => x.County).NotEmpty();
+        RuleFor(x => x.EducationLevel).IsInEnum();
     }
 }
 

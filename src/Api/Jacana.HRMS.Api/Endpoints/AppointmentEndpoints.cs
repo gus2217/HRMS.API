@@ -68,10 +68,11 @@ public static class AppointmentEndpoints
 
     private static async Task<IResult> SearchAsync(
         ISender sender, CancellationToken ct, string? clinicType = null, string? status = null,
-        DateTime? fromUtc = null, DateTime? toUtc = null, int pageNumber = 1, int pageSize = 50)
+        DateTime? fromUtc = null, DateTime? toUtc = null, Guid? patientId = null,
+        int pageNumber = 1, int pageSize = 50)
     {
         var result = await sender.Send(new SearchAppointmentsQuery(
-            clinicType, status, fromUtc, toUtc, pageNumber, pageSize), ct);
+            clinicType, status, fromUtc, toUtc, pageNumber, pageSize, patientId), ct);
         return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 

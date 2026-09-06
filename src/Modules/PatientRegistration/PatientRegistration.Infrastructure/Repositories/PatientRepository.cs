@@ -52,7 +52,11 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new PatientSummaryDto(
-                p.Id, p.PatientNumber, p.FirstName + " " + p.LastName, p.DateOfBirth,
+                p.Id, p.PatientNumber,
+                p.MiddleName == null
+                    ? p.FirstName + " " + p.LastName
+                    : p.FirstName + " " + p.MiddleName + " " + p.LastName,
+                p.DateOfBirth,
                 p.Phone.Value, null))
             .ToListAsync(ct);
     }
@@ -94,7 +98,9 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
         return query.Where(p =>
             p.FirstName.ToLower().Contains(lower)
             || p.LastName.ToLower().Contains(lower)
+            || (p.MiddleName != null && p.MiddleName.ToLower().Contains(lower))
             || (p.FirstName + " " + p.LastName).ToLower().Contains(lower)
+            || (p.MiddleName != null && (p.FirstName + " " + p.MiddleName + " " + p.LastName).ToLower().Contains(lower))
             || p.PatientNumber.ToLower().Contains(lower)
             || (phone != null && p.Phone.Value == phone)
             || (phonePrefix != null && p.Phone.Value.StartsWith(phonePrefix))
@@ -157,10 +163,12 @@ public sealed class PatientRepository(PatientDbContext db) : IPatientRepository
         if (p is null) return null;
 
         return new PatientDetailDto(
-            p.Id, p.PatientNumber, p.FirstName, p.LastName, p.DateOfBirth,
+            p.Id, p.PatientNumber, p.FirstName, p.MiddleName, p.LastName, p.DateOfBirth,
             p.Gender.ToString(), p.MaritalStatus.ToString(), p.Phone.Value,
             p.InsuranceType.ToString(), p.InsuranceNumber, p.ClinicType.ToString(),
             p.Address.County, p.Address.SubCounty, p.Address.Ward, p.Address.Line1,
+            p.Address.Village, p.Address.Landmark,
+            p.HighestEducation?.ToString(), p.Occupation, p.AlternativePhone,
             p.Status.ToString(),
             p.Allergies.Select(a => new AllergyDto(a.Id, a.Substance, a.Severity.ToString(), a.Notes)).ToArray(),
             p.Consents.Select(c => new ConsentDto(c.Type.ToString(), c.Granted, c.RecordedByUserId, null, c.RecordedAtUtc)).ToArray(),
