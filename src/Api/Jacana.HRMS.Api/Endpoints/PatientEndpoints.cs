@@ -31,14 +31,18 @@ public static class PatientEndpoints
         group.MapPut("/{id:guid}/demographics", UpdateDemographicsAsync)
             .RequireAuthorization(Permissions.Patients.Update);
 
+        // Allergies + consents are clinical record entries: only roles that can
+        // perform clinical work (Clinical.Consult — Doctor/Nurse/Admin) may add
+        // or remove them. Non-clinical roles (Receptionist, RecordsOfficer, …)
+        // keep read access via the patient detail endpoint but cannot mutate.
         group.MapPost("/{id:guid}/allergies", RegisterAllergyAsync)
-            .RequireAuthorization(Permissions.Patients.Update);
+            .RequireAuthorization(Permissions.Clinical.Consult);
 
         group.MapDelete("/{id:guid}/allergies/{allergyId:guid}", RemoveAllergyAsync)
-            .RequireAuthorization(Permissions.Patients.Update);
+            .RequireAuthorization(Permissions.Clinical.Consult);
 
         group.MapPost("/{id:guid}/consents", RecordConsentAsync)
-            .RequireAuthorization(Permissions.Patients.Update);
+            .RequireAuthorization(Permissions.Clinical.Consult);
 
         return app;
     }
