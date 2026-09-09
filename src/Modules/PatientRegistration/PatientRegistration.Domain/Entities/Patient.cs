@@ -62,6 +62,8 @@ public sealed class Patient : AggregateRoot<Guid>
     /// <summary>Occupation / profession (KenyaEMR person attribute).</summary>
     public string? Occupation { get; private set; }
     public NationalId? NationalId { get; private set; }
+    /// <summary>National registry (NUPI) client number, when the client was verified on the CR.</summary>
+    public string? NationalRegistryNumber { get; private set; }
     public InsuranceType InsuranceType { get; private set; }
     public string? InsuranceNumber { get; private set; }
     public ClinicType ClinicType { get; private set; }
@@ -151,6 +153,14 @@ public sealed class Patient : AggregateRoot<Guid>
     public Result SetNationalId(NationalId nationalId)
     {
         NationalId = nationalId;
+        return Result.Success();
+    }
+
+    public Result SetNationalRegistryNumber(string nationalRegistryNumber)
+    {
+        if (string.IsNullOrWhiteSpace(nationalRegistryNumber) || nationalRegistryNumber.Length > 32)
+            return Error.Validation("National registry number must be 1–32 characters.");
+        NationalRegistryNumber = nationalRegistryNumber.Trim();
         return Result.Success();
     }
 

@@ -39,14 +39,15 @@ public sealed class ChangePasswordCommandHandler(
             // Anonymous path is reserved for the forced first-login change: the
             // caller must prove the temporary password, and the account must be
             // pending a change. Credentials are verified first so a wrong password
-            // always reads as Unauthorized (no state leakage). 2FA can never
-            // coexist with this path in practice — 2FA enrollment requires a
-            // session, and must-change accounts get none.
+            // or unknown email always reads as Unauthorized (no state leakage).
+            // 2FA can never coexist with this path in practice — 2FA enrollment
+            // requires a session, and must-change accounts get none.
             if (string.IsNullOrWhiteSpace(request.Email))
                 return Error.Unauthorized("Email is required.");
 
-            user = await users.GetByEmailAsync(request.Email.Trim().ToLowerInvariant(), ct)
-                ?? throw new InvalidOperationException("Anonymous change-password target not found.");
+            user = await users.GetByEmailAsync(request.Email.Trim().ToLowerInvariant(), ct);
+            if (user is null)
+                return Error.Unauthorized("Invalid credentials."); // unknown email ≠ 500
 
             if (user.Status != UserStatus.Active)
                 return Error.Forbidden($"Account is {user.Status.ToString().ToLowerInvariant()}.");

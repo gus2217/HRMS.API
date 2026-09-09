@@ -19,6 +19,11 @@ public static class PatientEndpoints
         group.MapPost("/", RegisterAsync)
             .RequireAuthorization(Permissions.Patients.Register);
 
+        // National client-registry (NUPI) lookup by National ID — front-desk
+        // pre-registration step. Same permission as registration.
+        group.MapPost("/registry-lookup", RegistryLookupAsync)
+            .RequireAuthorization(Permissions.Patients.Register);
+
         group.MapGet("/{id:guid}", GetAsync)
             .RequireAuthorization(Permissions.Patients.View);
 
@@ -56,7 +61,8 @@ public static class PatientEndpoints
             request.NationalId, request.InsuranceType, request.InsuranceNumber, request.ClinicType,
             request.County, request.SubCounty, request.Ward, request.Line1,
             request.MiddleName, request.Village, request.Landmark,
-            request.EducationLevel, request.Occupation, request.AlternativePhone), ct);
+            request.EducationLevel, request.Occupation, request.AlternativePhone,
+            request.NationalRegistryNumber), ct);
 
         if (result.IsFailure) return MapError(result.Error);
 
@@ -65,6 +71,13 @@ public static class PatientEndpoints
             return Results.Conflict(new { duplicateCandidates = result.Value.DuplicateCandidates });
 
         return Results.Created($"/api/v1/patients/{result.Value.Id}", result.Value);
+    }
+
+    private static async Task<IResult> RegistryLookupAsync(
+        RegistryLookupRequestDto request, ISender sender, CancellationToken ct)
+    {
+        var result = await sender.Send(new LookupNationalRegistryQuery(request.NationalId), ct);
+        return result.IsSuccess ? Results.Ok(result.Value) : MapError(result.Error);
     }
 
     private static async Task<IResult> GetAsync(Guid id, ISender sender, CancellationToken ct)

@@ -5,6 +5,8 @@ namespace Jacana.PatientRegistration.Application.DTOs;
 
 // HTTP request bindings for the patient endpoints (framework-agnostic records).
 
+public sealed record RegistryLookupRequestDto(string NationalId);
+
 public sealed record RegisterPatientRequestDto(
     string FirstName,
     string LastName,
@@ -24,7 +26,8 @@ public sealed record RegisterPatientRequestDto(
     string? Landmark = null,
     EducationLevel? EducationLevel = null,
     string? Occupation = null,
-    string? AlternativePhone = null);
+    string? AlternativePhone = null,
+    string? NationalRegistryNumber = null);
 
 public sealed record UpdatePatientDemographicsRequestDto(
     string FirstName,

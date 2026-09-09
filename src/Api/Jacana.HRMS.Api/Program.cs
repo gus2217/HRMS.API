@@ -10,7 +10,9 @@ using Jacana.Identity.Application;
 using Jacana.Identity.Application.Features.Auth;
 using Jacana.Identity.Infrastructure;
 using Jacana.PatientRegistration.Application.Features.Patients;
+using Jacana.PatientRegistration.Application.Abstractions;
 using Jacana.PatientRegistration.Infrastructure;
+using Jacana.PatientRegistration.Infrastructure.Services;
 using Jacana.Clinical.Application.Features.Consultations;
 using Jacana.Clinical.Infrastructure;
 using Jacana.Inventory.Application.Features.Inventory;
@@ -111,6 +113,8 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 
 // ── Patient Registration module ───────────────────────────────────────────────
 builder.Services.AddPatientRegistrationInfrastructure(connectionString);
+builder.Services.Configure<ClientRegistryOptions>(builder.Configuration.GetSection("ClientRegistry"));
+builder.Services.AddScoped<IClientRegistryLookup, ClientRegistryLookup>();
 builder.Services.AddApplicationPipeline(typeof(RegisterPatientCommand).Assembly);
 
 // ── Clinical module ───────────────────────────────────────────────────────────

@@ -30,6 +30,17 @@ public sealed class RegisterPatientCommandValidator : AbstractValidator<Register
     }
 }
 
+public sealed class LookupNationalRegistryQueryValidator : AbstractValidator<LookupNationalRegistryQuery>
+{
+    public LookupNationalRegistryQueryValidator()
+    {
+        RuleFor(x => x.NationalId).NotEmpty()
+            .WithMessage("National ID is required for a registry lookup.");
+        RuleFor(x => x.NationalId).Matches(@"^\d{6,9}$")
+            .WithMessage("National ID must be 6–9 digits.");
+    }
+}
+
 public sealed class UpdatePatientDemographicsCommandValidator : AbstractValidator<UpdatePatientDemographicsCommand>
 {
     public UpdatePatientDemographicsCommandValidator()

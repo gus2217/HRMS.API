@@ -40,6 +40,7 @@ public sealed class PatientConfiguration : IEntityTypeConfiguration<Patient>
         });
 
         builder.Property(p => p.InsuranceNumber).HasMaxLength(64);
+        builder.Property(p => p.NationalRegistryNumber).HasMaxLength(32);
 
         builder.Property(p => p.RowVersion).IsConcurrencyToken();
 

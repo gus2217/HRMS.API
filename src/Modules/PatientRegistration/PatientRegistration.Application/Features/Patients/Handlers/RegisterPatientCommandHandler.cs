@@ -84,6 +84,9 @@ public sealed class RegisterPatientCommandHandler(
         if (nationalId is not null)
             patient.SetNationalId(nationalId);
 
+        if (!string.IsNullOrWhiteSpace(request.NationalRegistryNumber))
+            patient.SetNationalRegistryNumber(request.NationalRegistryNumber!.Trim());
+
         await patients.AddAsync(patient, ct);
 
         return new RegisterPatientResponseDto(patient.Id, patient.PatientNumber, []);

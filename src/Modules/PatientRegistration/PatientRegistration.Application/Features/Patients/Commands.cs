@@ -23,7 +23,8 @@ public sealed record RegisterPatientCommand(
     string? Landmark = null,
     Domain.EducationLevel? EducationLevel = null,
     string? Occupation = null,
-    string? AlternativePhone = null)
+    string? AlternativePhone = null,
+    string? NationalRegistryNumber = null)
     : ICommand<Result<RegisterPatientResponseDto>>;
 
 public sealed record UpdatePatientDemographicsCommand(
