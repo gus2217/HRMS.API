@@ -127,6 +127,8 @@ static async Task SeedIdentityAsync(string cs, string password)
         ("Identity.User.Register", "Register users"),
         ("Identity.User.AssignRole", "Assign roles to users"),
         ("Identity.User.Suspend", "Suspend/reactivate users"),
+        ("Identity.User.ManagePermissions", "Grant or revoke individual permissions on a user"),
+        ("Identity.User.ResetPassword", "Reset a user's password (issues a one-time temporary password)"),
         ("Identity.Role.View", "View roles"),
         ("Identity.Role.Manage", "Create and manage roles"),
         ("Patient.Register", "Register patients"),
@@ -214,6 +216,7 @@ static async Task SeedIdentityAsync(string cs, string password)
         {
             "Identity.User.View", "Identity.User.Register",
             "Identity.User.AssignRole", "Identity.User.Suspend",
+            "Identity.User.ManagePermissions", "Identity.User.ResetPassword",
             "Identity.Role.View", "Identity.Role.Manage",
         },
     };

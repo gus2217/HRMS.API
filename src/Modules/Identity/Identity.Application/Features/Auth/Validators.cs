@@ -1,5 +1,6 @@
 using FluentValidation;
 using Jacana.Identity.Application.DTOs;
+using Jacana.Identity.Application.Features.Auth.ChangePassword;
 using Jacana.Identity.Application.Features.Users;
 
 namespace Jacana.Identity.Application.Features.Auth;
@@ -47,5 +48,49 @@ public sealed class GetUsersQueryValidator : AbstractValidator<GetUsersQuery>
     {
         RuleFor(x => x.PageNumber).GreaterThanOrEqualTo(1);
         RuleFor(x => x.PageSize).InclusiveBetween(1, 100);
+    }
+}
+
+public sealed class CreateStaffUserCommandValidator : AbstractValidator<CreateStaffUserCommand>
+{
+    public CreateStaffUserCommandValidator()
+    {
+        RuleFor(x => x.FullName).NotEmpty().MaximumLength(150);
+        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256);
+        RuleFor(x => x.Phone).NotEmpty();
+    }
+}
+
+public sealed class UpdateUserAccessCommandValidator : AbstractValidator<UpdateUserAccessCommand>
+{
+    public UpdateUserAccessCommandValidator()
+    {
+        RuleFor(x => x.UserId).NotEmpty();
+    }
+}
+
+public sealed class SetUserStatusCommandValidator : AbstractValidator<SetUserStatusCommand>
+{
+    public SetUserStatusCommandValidator()
+    {
+        RuleFor(x => x.UserId).NotEmpty();
+    }
+}
+
+public sealed class ResetUserPasswordCommandValidator : AbstractValidator<ResetUserPasswordCommand>
+{
+    public ResetUserPasswordCommandValidator()
+    {
+        RuleFor(x => x.UserId).NotEmpty();
+    }
+}
+
+public sealed class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCommand>
+{
+    public ChangePasswordCommandValidator()
+    {
+        RuleFor(x => x.CurrentPassword).NotEmpty();
+        RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(8);
+        RuleFor(x => x.NewPassword).NotEqual(x => x.CurrentPassword);
     }
 }

@@ -4,6 +4,7 @@ using Jacana.HRMS.Api.Middleware;
 using Jacana.Identity.Application;
 using Jacana.Identity.Application.DTOs;
 using Jacana.Identity.Application.Features.Auth;
+using Jacana.Identity.Application.Features.Auth.ChangePassword;
 using Jacana.SharedKernel.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,7 @@ public static class IdentityEndpoints
         group.MapPost("/refresh", RefreshAsync);
         group.MapPost("/register", RegisterAsync)
             .RequireAuthorization(Permissions.Users.Register);
+        group.MapPost("/change-password", ChangePasswordAsync);
 
         group.MapGet("/csrf", GetCsrfTokenAsync);
 
@@ -65,6 +67,24 @@ public static class IdentityEndpoints
         var result = await sender.Send(new RegisterUserCommand(
             request.FullName, request.Email, request.Phone, request.Password, request.RoleNames), ct);
         return result.IsSuccess ? Results.Created($"/api/v1/users/{result.Value.Id}", result.Value) : MapError(result.Error);
+    }
+
+    private static async Task<IResult> ChangePasswordAsync(
+        ChangePasswordRequestDto request, ISender sender, HttpContext httpContext, CancellationToken ct)
+    {
+        // Shared by two flows: anonymous forced first-login change (Email set) and
+        // authenticated voluntary change (Email ignored). Response mirrors login —
+        // a fresh token pair for the caller's session.
+        var result = await sender.Send(new ChangePasswordCommand(
+            request.Email, request.CurrentPassword, request.NewPassword), ct);
+        if (result.IsFailure) return MapError(result.Error);
+
+        var value = result.Value;
+        if (isWebClient(httpContext) && value.AccessToken is not null)
+        {
+            SetAuthCookies(httpContext, value.AccessToken, value.RefreshToken!, true);
+        }
+        return Results.Ok(value);
     }
 
     private static IResult GetCsrfTokenAsync(HttpContext httpContext)

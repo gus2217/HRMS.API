@@ -39,6 +39,16 @@ public sealed class LoginCommandHandler(
 
         var permissionCodes = await users.GetPermissionCodesAsync(user.Id, ct);
         var roleNames = user.Roles.Select(r => r.Role.Name).ToArray();
+
+        // Temporary password not yet changed: no tokens until the user sets their
+        // own password through the forced change-password flow.
+        if (user.MustChangePassword)
+        {
+            return new LoginResponseDto(
+                user.Id, user.FullName, user.Email, roleNames,
+                null, null, false, MustChangePassword: true, permissionCodes);
+        }
+
         var (access, refresh) = tokens.Generate(user.Id, user.FacilityId.Value, roleNames, permissionCodes);
 
         var now = clock.UtcNow;
@@ -51,6 +61,6 @@ public sealed class LoginCommandHandler(
         user.RecordLogin(now);
         await users.UpdateAsync(user, ct);
 
-        return new LoginResponseDto(user.Id, user.FullName, user.Email, roleNames, access, refresh, false);
+        return new LoginResponseDto(user.Id, user.FullName, user.Email, roleNames, access, refresh, false, false, permissionCodes);
     }
 }

@@ -33,6 +33,12 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasMany(u => u.Roles)
             .WithOne(ur => ur.User)
             .HasForeignKey(ur => ur.UserId);
+
+        builder.HasMany(u => u.DirectPermissions)
+            .WithOne(up => up.User)
+            .HasForeignKey(up => up.UserId);
+
+        builder.Property(u => u.MustChangePassword).IsRequired().HasDefaultValue(false);
     }
 }
 
@@ -81,6 +87,15 @@ public sealed class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
     {
         builder.ToTable("user_roles");
         builder.HasKey(ur => new { ur.UserId, ur.RoleId });
+    }
+}
+
+public sealed class UserPermissionConfiguration : IEntityTypeConfiguration<UserPermission>
+{
+    public void Configure(EntityTypeBuilder<UserPermission> builder)
+    {
+        builder.ToTable("user_permissions");
+        builder.HasKey(up => new { up.UserId, up.PermissionId });
     }
 }
 

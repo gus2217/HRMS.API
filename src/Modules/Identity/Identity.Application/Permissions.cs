@@ -12,6 +12,12 @@ public static class Permissions
         public const string Register = "Identity.User.Register";
         public const string AssignRole = "Identity.User.AssignRole";
         public const string Suspend = "Identity.User.Suspend";
+
+        /// <summary>Grant/revoke individual permissions on a user (fine-tuning beyond roles).</summary>
+        public const string ManagePermissions = "Identity.User.ManagePermissions";
+
+        /// <summary>Reset a user's password — issues a temporary password that must be changed at next login.</summary>
+        public const string ResetPassword = "Identity.User.ResetPassword";
     }
 
     public static class Roles

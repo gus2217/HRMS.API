@@ -21,3 +21,13 @@ public interface ITotpService
     string GenerateQrCodeUri(string secret, string accountName);
     bool Validate(string secret, string code);
 }
+
+/// <summary>
+/// Generates a strong one-time default password for admin-created accounts and
+/// admin password resets. The result is shown to the admin once and the account
+/// is forced to change it at first login.
+/// </summary>
+public interface IDefaultPasswordGenerator
+{
+    string Generate();
+}

@@ -217,6 +217,7 @@ RecurringJob.AddOrUpdate<OutboxDispatcher>(
 
 // ── Endpoints ──────────────────────────────────────────────────────────────────
 app.MapIdentityEndpoints();
+app.MapStaffEndpoints();
 app.MapPatientEndpoints();
 app.MapClinicalEndpoints();
 app.MapPatientClinicalEndpoints();

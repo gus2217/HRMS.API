@@ -10,6 +10,7 @@ namespace Jacana.Identity.Domain;
 public sealed class User : AggregateRoot<Guid>
 {
     private readonly List<UserRole> _roles = new();
+    private readonly List<UserPermission> _directPermissions = new();
 
     private User() { } // EF
 
@@ -19,7 +20,8 @@ public sealed class User : AggregateRoot<Guid>
         string fullName,
         string email,
         PhoneNumber phone,
-        string passwordHash)
+        string passwordHash,
+        bool mustChangePassword)
         : base(id)
     {
         FacilityId = facilityId;
@@ -28,6 +30,7 @@ public sealed class User : AggregateRoot<Guid>
         Phone = phone;
         PasswordHash = passwordHash;
         Status = UserStatus.Active;
+        MustChangePassword = mustChangePassword;
     }
 
     public FacilityId FacilityId { get; private set; } = null!;
@@ -40,7 +43,18 @@ public sealed class User : AggregateRoot<Guid>
     public UserStatus Status { get; private set; }
     public DateTime? LastLoginAtUtc { get; private set; }
 
+    /// <summary>Roles bundle permissions; direct grants fine-tune access per user.</summary>
     public IReadOnlyCollection<UserRole> Roles => _roles.AsReadOnly();
+
+    /// <summary>Permissions granted directly to this user (beyond what their roles carry).</summary>
+    public IReadOnlyCollection<UserPermission> DirectPermissions => _directPermissions.AsReadOnly();
+
+    /// <summary>
+    /// True when the next successful login must be followed by a password change
+    /// (admin-created accounts and admin password resets). The auth service refuses
+    /// to issue tokens until the password has been changed.
+    /// </summary>
+    public bool MustChangePassword { get; private set; }
 
     public static Result<User> Register(
         Guid id,
@@ -48,14 +62,15 @@ public sealed class User : AggregateRoot<Guid>
         string fullName,
         string email,
         PhoneNumber phone,
-        string passwordHash)
+        string passwordHash,
+        bool mustChangePassword = false)
     {
         if (string.IsNullOrWhiteSpace(fullName))
             return Error.Validation("Full name is required.");
         if (string.IsNullOrWhiteSpace(email))
             return Error.Validation("Email is required.");
 
-        return new User(id, facilityId, fullName.Trim(), email.Trim().ToLowerInvariant(), phone, passwordHash);
+        return new User(id, facilityId, fullName.Trim(), email.Trim().ToLowerInvariant(), phone, passwordHash, mustChangePassword);
     }
 
     public Result AssignRole(Role role)
@@ -81,6 +96,29 @@ public sealed class User : AggregateRoot<Guid>
     {
         if (string.IsNullOrWhiteSpace(newHash)) return Error.Validation("Password hash is required.");
         PasswordHash = newHash;
+        return Result.Success();
+    }
+
+    /// <summary>Admin reset / account creation: force a password change at the next login.</summary>
+    public void RequirePasswordChange() => MustChangePassword = true;
+
+    /// <summary>Clears the forced-change flag after the user sets their own password.</summary>
+    public void MarkPasswordChanged() => MustChangePassword = false;
+
+    public Result GrantPermission(Permission permission)
+    {
+        if (_directPermissions.Any(p => p.PermissionId == permission.Id))
+            return Result.Success(); // idempotent
+
+        _directPermissions.Add(new UserPermission { UserId = Id, PermissionId = permission.Id, Permission = permission });
+        return Result.Success();
+    }
+
+    public Result RevokePermission(Guid permissionId)
+    {
+        var existing = _directPermissions.FirstOrDefault(p => p.PermissionId == permissionId);
+        if (existing is null) return Error.NotFound("Permission is not granted to this user.");
+        _directPermissions.Remove(existing);
         return Result.Success();
     }
 

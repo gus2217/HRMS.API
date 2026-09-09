@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
+        services.AddScoped<IDefaultPasswordGenerator, DefaultPasswordGenerator>();
         services.AddScoped<ITotpService, TotpService>();
         services.AddScoped<ITokenService, JwtTokenService>();
 

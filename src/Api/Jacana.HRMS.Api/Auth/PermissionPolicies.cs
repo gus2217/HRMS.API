@@ -27,6 +27,7 @@ public static class PermissionPolicies
     private static readonly string[] AllPermissionCodes =
     [
         Permissions.Users.View, Permissions.Users.Register, Permissions.Users.AssignRole, Permissions.Users.Suspend,
+        Permissions.Users.ManagePermissions, Permissions.Users.ResetPassword,
         Permissions.Roles.View, Permissions.Roles.Manage,
         Permissions.Patients.Register, Permissions.Patients.View, Permissions.Patients.Update, Permissions.Patients.ConfidentialView,
         Permissions.Billing.IssueInvoice, Permissions.Billing.RecordPayment, Permissions.Billing.View,

@@ -1,22 +1,10 @@
 using Jacana.Identity.Application.Abstractions;
 using Jacana.Identity.Application.DTOs;
 using Jacana.Identity.Domain;
-using Jacana.SharedKernel.Application.Common;
 using Jacana.SharedKernel.Domain;
 using MediatR;
 
 namespace Jacana.Identity.Application.Features.Users;
-
-public sealed class GetUsersQueryHandler(IUserRepository users)
-    : IRequestHandler<GetUsersQuery, Result<PagedResult<UserResponseDto>>>
-{
-    public Task<Result<PagedResult<UserResponseDto>>> Handle(GetUsersQuery request, CancellationToken ct)
-    {
-        // Read side: repository returns a projected page (AsNoTracking) — no domain model leak.
-        return Task.FromResult<Result<PagedResult<UserResponseDto>>>(
-            Result.Success(new PagedResult<UserResponseDto>([], 0, request.PageNumber, request.PageSize)));
-    }
-}
 
 public sealed class ListRolesQueryHandler(IRoleRepository roles)
     : IRequestHandler<ListRolesQuery, Result<IReadOnlyList<RoleDto>>>
@@ -38,5 +26,35 @@ public sealed class ListPermissionsQueryHandler(IPermissionRepository permission
     {
         var all = await permissions.GetAllAsync(ct);
         return all.Select(p => new PermissionDto(p.Id, p.Code, p.Description)).ToArray();
+    }
+}
+
+/// <summary>Shared mapping: domain User → detail DTO with direct + effective permissions.</summary>
+public static class StaffUserMapping
+{
+    public static StaffUserDetailDto ToDetail(User user, IReadOnlyList<string>? effectivePermissions = null)
+    {
+        var roles = user.Roles.Select(r => r.Role.Name).OrderBy(n => n).ToArray();
+        var direct = user.DirectPermissions.Select(p => p.Permission.Code).OrderBy(c => c).ToArray();
+        var effective = effectivePermissions ?? user.Roles
+            .SelectMany(r => r.Role.Permissions)
+            .Select(rp => rp.Permission.Code)
+            .Concat(direct)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToArray();
+
+        return new StaffUserDetailDto(
+            user.Id,
+            user.FullName,
+            user.Email,
+            user.Phone.Value,
+            user.Status.ToString(),
+            user.MustChangePassword,
+            user.TwoFactorEnabled,
+            user.LastLoginAtUtc,
+            roles,
+            direct,
+            effective);
     }
 }

@@ -13,7 +13,9 @@ public sealed record LoginResponseDto(
     IReadOnlyList<string> Roles,
     string? AccessToken,
     string? RefreshToken,
-    bool RequiresTwoFactor);
+    bool RequiresTwoFactor,
+    bool MustChangePassword = false,
+    IReadOnlyList<string>? Permissions = null);
 
 public sealed record RefreshTokenRequestDto(string? RefreshToken);
 
