@@ -33,6 +33,13 @@ public sealed class ClientRegistryLookup : IClientRegistryLookup
         if (!_options.Enabled)
             return new RegistryLookupResult(false, null, "National registry lookup is disabled.");
 
+        if (string.IsNullOrWhiteSpace(_options.TokenUrl) || string.IsNullOrWhiteSpace(_options.ClientId)
+            || string.IsNullOrWhiteSpace(_options.ClientSecret) || string.IsNullOrWhiteSpace(_options.SearchBaseUrl))
+        {
+            return new RegistryLookupResult(false, null,
+                "National registry is not configured on this server (ClientRegistry settings missing).");
+        }
+
         var token = await GetTokenAsync(ct);
         if (string.IsNullOrWhiteSpace(token))
             return new RegistryLookupResult(false, null, "Could not authenticate with the national registry.");
